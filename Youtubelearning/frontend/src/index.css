@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root {
+  /* Crisp Dark Theme */
+  --bg: #000000;
+  --bg-soft: #0a0a0a;
+  --panel: rgba(10, 10, 10, 0.6);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --panel-hover: rgba(255, 255, 255, 0.03);
+
+  --text: #ffffff;
+  --muted: #a1a1aa;
+  --muted-2: #71717a;
+
+  /* Sharp Accents */
+  --brand: #3b82f6; /* Blue 500 */
+  --brand-2: #8b5cf6; /* Violet 500 */
+  --brand-3: #06b6d4; /* Cyan 500 */
+  --danger: #ef4444;
+}
+
+.light {
+  /* Crisp Light Theme */
+  --bg: #fafafa;
+  --bg-soft: #ffffff;
+  --panel: rgba(255, 255, 255, 0.7);
+  --panel-border: rgba(0, 0, 0, 0.06);
+  --panel-hover: rgba(0, 0, 0, 0.02);
+
+  --text: #09090b;
+  --muted: #52525b;
+  --muted-2: #71717a;
+
+  --brand: #2563eb;
+  --brand-2: #7c3aed;
+  --brand-3: #0891b2;
+  --danger: #dc2626;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--bg);
+  background-image: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.08), transparent 40%);
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Subtle, sharp glassmorphism */
+.glass {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.section-container {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 1440px;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.text-soft {
+  color: var(--muted-2);
+}
+
+.gradient-text {
+  background: linear-gradient(110deg, var(--brand), var(--brand-2));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.light .grid-bg {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+}
+
+.premium-border {
+  position: relative;
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+}
+
+.premium-border:hover {
+  border-color: rgba(255,255,255,0.12);
+  background: var(--panel-hover);
+}
+.light .premium-border:hover {
+  border-color: rgba(0,0,0,0.12);
+}
+
+input,
+textarea {
+  color: var(--text);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted-2);
+}
+
+::selection {
+  background: var(--brand);
+  color: white;
+}
+
+input,
+textarea,
+button {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
