@@ -11,10 +11,12 @@ import {
 import { motion } from "framer-motion";
 import { GoogleLogin } from "@react-oauth/google";
 import { loginUser, googleLoginUser } from "../services/authService";
+import useAuth from "../hooks/useAuth";
 import AuthShowcase from "../components/common/AuthShowcase";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { saveAuth } = useAuth();
 
   const [form, setForm] = useState({
     email: "",
@@ -46,10 +48,11 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
-      await loginUser({
+      const data = await loginUser({
         email: form.email,
         password: form.password,
       });
+      saveAuth(data.token, data.user);
       navigate("/dashboard");
     } catch (err) {
       setError(
@@ -67,7 +70,8 @@ export default function LoginPage() {
       setError("");
       setLoading(true);
 
-      await googleLoginUser(credentialResponse.credential);
+      const data = await googleLoginUser(credentialResponse.credential);
+      saveAuth(data.token, data.user);
       navigate("/dashboard");
     } catch (err) {
       setError(

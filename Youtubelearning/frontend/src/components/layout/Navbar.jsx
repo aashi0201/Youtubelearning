@@ -2,10 +2,11 @@ import { motion } from "framer-motion";
 import { Bell, LayoutDashboard, LogIn, Search, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import ThemeToggle from "../common/ThemeToggle";
+import useAuth from "../../hooks/useAuth";
 
 export default function Navbar() {
-  const token = localStorage.getItem("token");
-  const isLoggedIn = Boolean(token);
+  const { isAuthenticated } = useAuth();
+  const isLoggedIn = isAuthenticated;
 
   return (
     <motion.header

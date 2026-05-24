@@ -1,5 +1,7 @@
+const logger = require("../utils/logger");
+
 function errorHandler(err, req, res, next) {
-  console.error("Error:", err);
+  logger.error({ err, path: req.originalUrl, method: req.method }, "Request failed");
 
   if (res.headersSent) {
     return next(err);

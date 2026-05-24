@@ -3,6 +3,7 @@ const cors = require("cors");
 const axios = require("axios");
 const helmet = require("helmet");
 const mongoose = require("mongoose");
+const mongoSanitize = require("express-mongo-sanitize");
 
 const authRoutes = require("./routes/auth");
 const playlistRoutes = require("./routes/playlists");
@@ -24,6 +25,8 @@ const codingRoutes = require("./routes/coding");
 
 const errorHandler = require("./middleware/errorHandler");
 const env = require("./config/env");
+const { corsOrigin } = require("./config/cors");
+const { getSupabaseHealth } = require("./config/supabase");
 const {
   authLimiter,
   aiLimiter,
@@ -43,6 +46,10 @@ function youtubeErrorToMessage(err) {
 }
 
 function getMongoStatus() {
+  if (env.DATABASE_PROVIDER === "supabase") {
+    return "disabled";
+  }
+
   const states = {
     0: "disconnected",
     1: "connected",
@@ -60,12 +67,22 @@ function createApp() {
 
   app.use(
     helmet({
-      crossOriginResourcePolicy: false
+      crossOriginResourcePolicy: false,
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          "default-src": ["'self'"],
+          "script-src": ["'self'", "'unsafe-inline'", "https://www.youtube.com", "https://www.gstatic.com"],
+          "frame-src": ["'self'", "https://www.youtube.com", "https://www.youtube-nocookie.com"],
+          "img-src": ["'self'", "data:", "https:", "blob:"],
+          "connect-src": ["'self'", env.FRONTEND_URL, env.SUPABASE_URL].filter(Boolean),
+        },
+      },
     })
   );
 
   app.use(cors({
-    origin: true,
+    origin: corsOrigin,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true
   }));
@@ -79,6 +96,7 @@ function createApp() {
 
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+  app.use(mongoSanitize({ replaceWith: "_" }));
 
   app.use(generalLimiter);
 
@@ -90,11 +108,15 @@ function createApp() {
     });
   });
 
-  app.get("/api/health", (req, res) => {
+  app.get("/api/health", async (req, res) => {
+    const supabase = await getSupabaseHealth();
+
     res.json({
       ok: true,
       status: "healthy",
       database: getMongoStatus(),
+      supabase,
+      uptimeSec: Math.round(process.uptime()),
       config: env.getConfigStatus(),
       time: new Date().toISOString()
     });

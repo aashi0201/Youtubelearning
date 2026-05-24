@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { registerUser } from "../services/authService";
+import useAuth from "../hooks/useAuth";
 import AuthShowcase from "../components/common/AuthShowcase";
 
 function getPasswordStrength(password) {
@@ -28,6 +29,7 @@ function getPasswordStrength(password) {
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { saveAuth } = useAuth();
 
   const [form, setForm] = useState({
     name: "",
@@ -99,11 +101,12 @@ export default function RegisterPage() {
 
     try {
       setLoading(true);
-      await registerUser({
+      const data = await registerUser({
         name: form.name,
         email: form.email,
         password: form.password,
       });
+      saveAuth(data.token, data.user);
       setSuccess("Account created successfully.");
       setTimeout(() => navigate("/dashboard"), 700);
     } catch (err) {

@@ -20,9 +20,7 @@ const app = createApp();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: env.FRONTEND_URL
-      ? ["http://localhost:5173", env.FRONTEND_URL]
-      : ["http://localhost:5173"],
+    origin: env.CORS_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean),
     methods: ["GET", "POST"],
     credentials: true
   },
@@ -134,8 +132,12 @@ console.log("Configuration validated");
 
 async function startServer() {
   try {
-    await mongoose.connect(env.MONGO_URI);
-    console.log("MongoDB connected");
+    if (env.DATABASE_PROVIDER === "mongo") {
+      await mongoose.connect(env.MONGO_URI);
+      console.log("MongoDB connected");
+    } else {
+      console.log("MongoDB skipped because DATABASE_PROVIDER=supabase");
+    }
 
     const PORT = env.PORT;
 
@@ -149,3 +151,23 @@ async function startServer() {
 }
 
 startServer();
+
+async function shutdown(signal) {
+  console.log(`${signal} received. Shutting down gracefully...`);
+
+  server.close(async () => {
+    try {
+      if (env.DATABASE_PROVIDER === "mongo") {
+        await mongoose.connection.close(false);
+        console.log("MongoDB connection closed");
+      }
+      process.exit(0);
+    } catch (error) {
+      console.error("Shutdown error:", error.message);
+      process.exit(1);
+    }
+  });
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

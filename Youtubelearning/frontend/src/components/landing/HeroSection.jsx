@@ -1,10 +1,19 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import Button from "../common/Button";
 import { extractYoutubeId } from "../../utils/helpers";
-import PremiumHeroPreview from "./PremiumHeroPreview";
+
+const LearningConstellation = lazy(() => import("./LearningConstellation"));
+
+function SceneFallback() {
+  return (
+    <div className="grid min-h-[420px] place-items-center rounded-[2rem] border border-white/10 bg-white/[0.03] text-sm text-muted">
+      Loading interactive graph...
+    </div>
+  );
+}
 
 export default function HeroSection() {
   const navigate = useNavigate();
@@ -55,7 +64,7 @@ export default function HeroSection() {
             className="mt-6 max-w-2xl text-base text-muted md:text-lg"
           >
             Convert video content into summaries, flashcards, quizzes,
-            transcript-aware answers, and AI conversations — all inside one
+            transcript-aware answers, and AI conversations inside one
             premium learning flow.
           </motion.p>
 
@@ -106,12 +115,14 @@ export default function HeroSection() {
               onClick={() => navigate("/workspace/M7lc1UVf-VE")}
               className="text-sm font-semibold text-blue-300 transition hover:text-blue-200"
             >
-              Try demo workspace →
+              Try demo workspace
             </button>
           </motion.div>
         </div>
 
-        <PremiumHeroPreview />
+        <Suspense fallback={<SceneFallback />}>
+          <LearningConstellation />
+        </Suspense>
       </div>
     </section>
   );

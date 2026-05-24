@@ -4,6 +4,10 @@ const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: process.env.PORT || 5000,
   MONGO_URI: process.env.MONGO_URI || "",
+  SUPABASE_URL: process.env.SUPABASE_URL || "",
+  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || "",
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+  DATABASE_PROVIDER: process.env.DATABASE_PROVIDER || "mongo",
   JWT_SECRET: process.env.JWT_SECRET || "",
   YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY || "",
   AI_PROVIDER: process.env.AI_PROVIDER || "openrouter",
@@ -15,6 +19,7 @@ const env = {
   GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-2.0-flash",
   REDIS_URL: process.env.REDIS_URL || "",
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
+  CORS_ORIGINS: process.env.CORS_ORIGINS || process.env.FRONTEND_URL || "http://localhost:5173",
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "",
   MAIL_HOST: process.env.MAIL_HOST || "",
   MAIL_PORT: process.env.MAIL_PORT || "587",
@@ -31,7 +36,15 @@ function hasValue(value) {
 function getStartupEnvErrors() {
   const errors = [];
 
-  if (!hasValue(env.MONGO_URI)) {
+  if (env.DATABASE_PROVIDER === "supabase") {
+    if (!hasValue(env.SUPABASE_URL)) {
+      errors.push("SUPABASE_URL is required when DATABASE_PROVIDER=supabase");
+    }
+
+    if (!hasValue(env.SUPABASE_SERVICE_ROLE_KEY)) {
+      errors.push("SUPABASE_SERVICE_ROLE_KEY is required when DATABASE_PROVIDER=supabase");
+    }
+  } else if (!hasValue(env.MONGO_URI)) {
     errors.push("MONGO_URI is required");
   }
 
@@ -67,6 +80,9 @@ function validateStartupEnv() {
 function getConfigStatus() {
   return {
     nodeEnv: env.NODE_ENV,
+    databaseProvider: env.DATABASE_PROVIDER,
+    mongoConfigured: hasValue(env.MONGO_URI),
+    supabaseConfigured: hasValue(env.SUPABASE_URL) && hasValue(env.SUPABASE_SERVICE_ROLE_KEY),
     frontendUrlConfigured: hasValue(env.FRONTEND_URL),
     youtubeConfigured: hasValue(env.YOUTUBE_API_KEY),
     aiProvider: env.AI_PROVIDER,

@@ -8,6 +8,15 @@ const { OAuth2Client } = require("google-auth-library");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
 const env = require("../config/env");
+const { validatePasswordStrength } = require("../utils/password");
+const validateSchema = require("../middleware/validateSchema");
+const {
+  registerSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  googleSchema,
+} = require("../validators/authSchemas");
 
 const router = express.Router();
 const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
@@ -76,7 +85,7 @@ async function sendResetEmail(to, resetUrl) {
 }
 
 // Register
-router.post("/register", async (req, res) => {
+router.post("/register", validateSchema(registerSchema), async (req, res) => {
   try {
     const { name, email, password } = req.body || {};
 
@@ -98,10 +107,11 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    if (cleanPassword.length < 6) {
+    const passwordStrength = validatePasswordStrength(cleanPassword);
+    if (!passwordStrength.ok) {
       return res.status(400).json({
         ok: false,
-        error: "Password must be at least 6 characters",
+        error: passwordStrength.message,
       });
     }
 
@@ -143,7 +153,7 @@ router.post("/register", async (req, res) => {
 });
 
 // Login
-router.post("/login", async (req, res) => {
+router.post("/login", validateSchema(loginSchema), async (req, res) => {
   try {
     const { email, password } = req.body || {};
 
@@ -196,7 +206,7 @@ router.post("/login", async (req, res) => {
 });
 
 // Forgot password
-router.post("/forgot-password", async (req, res) => {
+router.post("/forgot-password", validateSchema(forgotPasswordSchema), async (req, res) => {
   try {
     const email = String(req.body?.email || "").trim().toLowerCase();
 
@@ -254,7 +264,7 @@ router.post("/forgot-password", async (req, res) => {
 });
 
 // Reset password
-router.post("/reset-password/:token", async (req, res) => {
+router.post("/reset-password/:token", validateSchema(resetPasswordSchema), async (req, res) => {
   try {
     const rawToken = String(req.params.token || "");
     const password = String(req.body?.password || "");
@@ -266,10 +276,11 @@ router.post("/reset-password/:token", async (req, res) => {
       });
     }
 
-    if (password.length < 6) {
+    const passwordStrength = validatePasswordStrength(password);
+    if (!passwordStrength.ok) {
       return res.status(400).json({
         ok: false,
-        error: "Password must be at least 6 characters",
+        error: passwordStrength.message,
       });
     }
 
@@ -312,7 +323,7 @@ router.post("/reset-password/:token", async (req, res) => {
 });
 
 // Google login
-router.post("/google", async (req, res) => {
+router.post("/google", validateSchema(googleSchema), async (req, res) => {
   try {
     const credential = req.body?.credential;
 
