@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Register • YouTube Learning</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="authPage">
+  <div class="authBg">
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+    <div class="blob blob3"></div>
+    <div class="gridOverlay"></div>
+  </div>
+
+  <div class="authShell">
+    <div class="authPanel authInfoCard">
+      <div class="authLogo">✨</div>
+      <h1 class="authHeading">Create Your Account</h1>
+      <p class="authText">
+        Build your own structured YouTube learning environment with progress analytics,
+        playlist management, and future AI learning tools.
+      </p>
+
+      <div class="authFeatureList">
+        <div class="authFeatureItem">🔐 Secure backend auth with MongoDB</div>
+        <div class="authFeatureItem">📈 Progress saved to your profile</div>
+        <div class="authFeatureItem">🚀 Built for future upgrades and AI modules</div>
+      </div>
+    </div>
+
+    <div class="authPanel authFormCard">
+      <div class="authTabs">
+        <a class="authTab" href="login.html">Login</a>
+        <a class="authTab active" href="register.html">Register</a>
+      </div>
+
+      <div class="authFormHeader">
+        <h2>Create account</h2>
+        <p>Start your interactive learning experience.</p>
+      </div>
+
+      <div id="authMessage" class="authMessage" style="display:none;"></div>
+
+      <div class="authForm">
+        <label class="authLabel">Full Name</label>
+        <input id="name" class="input authInput" type="text" placeholder="Enter your name" />
+
+        <label class="authLabel">Email</label>
+        <input id="email" class="input authInput" type="email" placeholder="Enter your email" />
+
+        <label class="authLabel">Password</label>
+        <div class="passwordWrap">
+          <input id="pass" class="input authInput" type="password" placeholder="Create a password" />
+          <button type="button" class="togglePassBtn" onclick="togglePassword('pass', this)">Show</button>
+        </div>
+
+        <div class="strengthWrap">
+          <div class="strengthBar">
+            <div id="strengthFill" class="strengthFill"></div>
+          </div>
+          <div id="strengthText" class="strengthText">Password strength: —</div>
+        </div>
+
+        <label class="authLabel">Confirm Password</label>
+        <div class="passwordWrap">
+          <input id="confirmPass" class="input authInput" type="password" placeholder="Confirm password" />
+          <button type="button" class="togglePassBtn" onclick="togglePassword('confirmPass', this)">Show</button>
+        </div>
+
+        <label class="checkRow">
+          <input id="agreeTerms" type="checkbox" />
+          <span>I agree to use this platform for learning purposes.</span>
+        </label>
+
+        <button id="registerBtn" class="btn btnPrimary authMainBtn" onclick="register()">Register</button>
+
+        <div class="authDivider">
+          <span>or continue with</span>
+        </div>
+
+        <button type="button" class="btn btnGhost authGoogleBtn" onclick="googleLoginPlaceholder()">
+          <span>🔵</span>
+          <span>Continue with Google</span>
+        </button>
+
+        <div class="authBottomText">
+          Already have an account? <a class="link" href="login.html">Login</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+</body>
+</html>

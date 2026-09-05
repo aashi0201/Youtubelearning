@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>YouTube Learning Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://www.youtube.com/iframe_api"></script>
+</head>
+<body>
+  <div class="appShell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brandCard glass pop">
+        <div class="brandRow">
+          <div class="brandIcon">▶</div>
+          <div>
+            <div class="brandTitle">YouTube Learning</div>
+            <div class="brandSub">Track • Learn • Progress</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="userBar" class="glass sectionCard pop">
+        <div class="sectionTitle">Account</div>
+        <div class="userBox">
+          <div class="userAvatar" id="userAvatar">U</div>
+          <div class="userMeta">
+            <div id="userName" class="userName">User</div>
+            <div id="userEmail" class="userEmail">user@email.com</div>
+          </div>
+        </div>
+        <button class="btn btnDanger fullBtn" onclick="logout()">Logout</button>
+      </div>
+
+      <div class="glass sectionCard pop">
+        <div class="sectionHead">
+          <div class="sectionTitle">My Playlists</div>
+          <button class="btn btnMini" onclick="createPlaylist()">＋</button>
+        </div>
+        <div id="playlistList" class="listWrap"></div>
+      </div>
+
+      <div class="glass sectionCard pop">
+        <div class="sectionTitle">Import YouTube Playlist</div>
+        <input id="ytPlaylistUrl" class="input" placeholder="Paste playlist URL" />
+        <button class="btn btnPrimary fullBtn" onclick="importYoutubePlaylist()">Import</button>
+        <div class="miniNote">Imports videos into selected playlist.</div>
+      </div>
+
+      <div class="glass sectionCard pop">
+        <div class="sectionTitle">Watch History</div>
+        <div id="historyList" class="listWrap smallList"></div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="mainArea">
+      <header class="topbar glass pop">
+        <div>
+          <div class="pageTitle">Dashboard</div>
+          <div class="pageSub">Welcome back, keep learning consistently.</div>
+        </div>
+        <div class="selectedBadge">
+          <span class="muted">Selected Playlist</span>
+          <strong id="selectedName">—</strong>
+        </div>
+      </header>
+
+      <section class="heroGrid">
+        <div class="glass statCard pop">
+          <div class="statLabel">Today Watchtime</div>
+          <div class="statValue" id="aToday">0:00</div>
+        </div>
+
+        <div class="glass statCard pop">
+          <div class="statLabel">Lifetime Watchtime</div>
+          <div class="statValue" id="aLife">0:00</div>
+        </div>
+
+        <div class="glass statCard pop">
+          <div class="statLabel">Videos Completed</div>
+          <div class="statValue" id="aDone">0</div>
+        </div>
+
+        <div class="glass statCard pop">
+          <div class="statLabel">Streak</div>
+          <div class="statValue"><span id="aStreak">0</span> days</div>
+        </div>
+      </section>
+
+      <section class="contentGrid">
+        <!-- Left column -->
+        <div class="leftColumn">
+          <div class="glass sectionCard pop">
+            <div class="sectionHead">
+              <div>
+                <div class="sectionTitle">Video Player</div>
+                <div class="miniNote" id="nowPlaying">Nothing playing</div>
+              </div>
+              <button id="resumeBtn" class="btn btnGhost" style="display:none;" onclick="resumeVideo()">Resume</button>
+            </div>
+
+            <div class="playerWrap">
+              <div id="player"></div>
+            </div>
+
+            <div class="videoInputRow">
+              <input id="singleVideoUrl" class="input" placeholder="Paste single YouTube video URL" />
+              <button class="btn btnPrimary" onclick="playSingleVideo()">Play</button>
+            </div>
+
+            <div class="statsRow">
+              <div class="miniStat glassInner">
+                <div class="miniLabel">Watched</div>
+                <div class="miniValue"><span id="percent">0</span>%</div>
+              </div>
+              <div class="miniStat glassInner">
+                <div class="miniLabel">Current Watchtime</div>
+                <div class="miniValue"><span id="watchtime">0:00</span></div>
+              </div>
+              <div class="miniStat glassInner">
+                <div class="miniLabel">Playlist Progress</div>
+                <div class="miniValue"><span id="plistProgress">0</span>%</div>
+              </div>
+              <div class="miniStat glassInner">
+                <div class="miniLabel">Playlist Watchtime</div>
+                <div class="miniValue"><span id="plistWatchtime">0:00</span></div>
+              </div>
+            </div>
+
+            <div class="progressTrack">
+              <div class="progressFill" id="progressBar"></div>
+            </div>
+
+            <div class="actionRow">
+              <button class="btn" onclick="prevInSelected()">⬅ Prev</button>
+              <button class="btn" onclick="nextInSelected()">Next ➡</button>
+              <button class="btn btnDanger" onclick="clearHistory()">Clear History</button>
+            </div>
+          </div>
+
+          <div class="glass sectionCard pop">
+            <div class="sectionHead">
+              <div class="sectionTitle">Analytics</div>
+              <div class="rangeBtns">
+                <button class="btn btnMini" onclick="setTrendDays(7)">7D</button>
+                <button class="btn btnMini" onclick="setTrendDays(30)">30D</button>
+              </div>
+            </div>
+
+            <canvas id="trendChart" width="900" height="220"></canvas>
+
+            <div class="analyticsGrid">
+              <div>
+                <div class="sectionTitle smallTitle">Top Watched Videos</div>
+                <div id="topVideos" class="listWrap midList"></div>
+              </div>
+              <div>
+                <div class="sectionTitle smallTitle">Playlist Summary</div>
+                <div id="playlistStats" class="listWrap midList"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div class="rightColumn">
+          <div class="glass sectionCard pop">
+            <div class="sectionHead">
+              <div class="sectionTitle">Selected Playlist</div>
+              <div class="sectionActionGroup">
+                <button class="btn btnMini" onclick="renameSelected()">Rename</button>
+                <button class="btn btnMini btnDanger" onclick="deleteSelected()">Delete</button>
+              </div>
+            </div>
+
+            <div class="videoInputRow">
+              <input id="addVideoUrl" class="input" placeholder="Paste YouTube video URL to add" />
+              <button class="btn btnPrimary" onclick="addVideoToSelected()">Add Video</button>
+            </div>
+
+            <div id="videoList" class="listWrap largeList"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
