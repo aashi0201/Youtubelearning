@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>YouTube Learning Platform — Status & Roadmap</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  body {
+    font-family:'Inter',system-ui,sans-serif;
+    background:radial-gradient(1200px 800px at 20% -10%, #1e1b4b 0%, #0f0f1a 55%, #09090f 100%);
+    color:#e2e8f0;
+    width:1600px;
+    padding:56px 64px;
+  }
+  .wrap { width:1472px; margin:0 auto; }
+  header { text-align:center; margin-bottom:44px; }
+  .tag {
+    display:inline-block; font-size:13px; font-weight:600; letter-spacing:2.5px;
+    color:#a5b4fc; text-transform:uppercase; border:1px solid #3730a3;
+    padding:7px 18px; border-radius:999px; background:#1e1b4b88; margin-bottom:16px;
+  }
+  h1 {
+    font-size:52px; font-weight:800; letter-spacing:-1.5px;
+    background:linear-gradient(90deg,#a5b4fc,#818cf8,#c084fc,#f472b6, #a5b4fc);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .sub { font-size:18px; color:#94a3b8; margin-top:10px; }
+  .meta { margin-top:18px; display:flex; justify-content:center; gap:14px; flex-wrap:wrap; }
+  .pill {
+    font-size:13px; font-weight:600; padding:8px 16px; border-radius:10px;
+    border:1px solid #374151; background:#111827cc; color:#cbd5e1;
+    display:inline-flex; align-items:center; gap:8px;
+  }
+  .dot { width:8px; height:8px; border-radius:50%; }
+
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+  .card {
+    background:#111827dd; border:1px solid #1f2937; border-radius:20px; padding:30px 32px;
+    backdrop-filter:blur(8px);
+  }
+  .card h2 { font-size:20px; font-weight:700; color:#f1f5f9; display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+  .card .ico { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+  .green .ico { background:#064e3b; } .green h2 { color:#6ee7b7; }
+  .blue .ico { background:#1e3a8a; } .blue h2 { color:#93c5fd; }
+  .amber .ico { background:#78350f; } .amber h2 { color:#fcd34d; }
+  .violet .ico { background:#4c1d95; } .violet h2 { color:#c4b5fd; }
+
+  ul { list-style:none; }
+  li { padding:7px 0 7px 30px; position:relative; font-size:15px; color:#cbd5e1; line-height:1.45; }
+  li::before { content:""; position:absolute; left:4px; top:15px; width:10px; height:10px; border-radius:3px; }
+  .green li::before { background:#34d399; }
+  .blue li::before { background:#60a5fa; }
+  .amber li::before { background:#fbbf24; }
+  .violet li::before { background:#a78bfa; }
+
+  .progress-bar { height:10px; border-radius:6px; background:#1f2937; overflow:hidden; margin:6px 0 4px; }
+  .progress-bar > div { height:100%; border-radius:6px; }
+  .pct { font-size:13px; font-weight:600; color:#94a3b8; }
+  .row { display:flex; justify-content:space-between; align-items:center; }
+  .card .note { font-size:13px; color:#64748b; margin-top:12px; }
+  .b-top { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:26px; }
+  .status-line { margin:8px 0; }
+  .status-line strong { color:#e2e8f0; font-weight:600; }
+  .val { color:#34d399; font-weight:700; }
+
+  footer { margin-top:30px; display:flex; justify-content:center; gap:24px; font-size:13px; color:#475569; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="tag">Project Status · Roadmap</span>
+    <h1>YouTube Learning Platform</h1>
+    <div class="sub">AI-powered, full-stack interactive learning platform &nbsp;·&nbsp; React + Node.js + MongoDB + Supabase</div>
+    <div class="meta">
+      <span class="pill"><span class="dot" style="background:#34d399"></span>Phase: Stabilization</span>
+      <span class="pill"><span class="dot" style="background:#60a5fa"></span>19 API route groups</span>
+      <span class="pill"><span class="dot" style="background:#fbbf24"></span>~80% Feature Complete</span>
+      <span class="pill"><span class="dot" style="background:#a78bfa"></span>7 npm scripts</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- Current status -->
+    <div class="card green">
+      <h2><span class="ico">✓</span> Current Status</h2>
+      <div class="status-line"><strong>Backend:</strong> <span class="val">Running &nbsp;/&nbsp; 5000</span> — Express REST API, config validated, MongoDB connected</div>
+      <div class="status-line"><strong>Frontend:</strong> <span class="val">Builds cleanly</span> — React 19 + Vite, ~2.6s production build</div>
+      <div class="status-line"><strong>Auth:</strong> <span class="val">Done</span> — Email/Password, Google OAuth, JWT, reset flow</div>
+      <div class="status-line"><strong>Core study tools:</strong> <span class="val">Done</span> — Workspace, notes, bookmarks, transcripts, progress tracking</div>
+      <div class="status-line"><strong>AI features:</strong> <span class="val">Done</span> — Summaries, quizzes, flashcards, ask/chat, assignment solver, coding stats (OpenRouter)</div>
+      <div class="status-line"><strong>Social:</strong> <span class="val">Done</span> — Community, connections, Socket.IO realtime chat</div>
+      <div class="status-line"><strong>Gamification:</strong> <span class="val">Partial</span> — Streaks, activity heatmap, certificates; badges/achievements pending</div>
+      <div class="status-line"><strong>Liveness:</strong> <span class="val">Local dev</span> — no staging/production deployment yet</div>
+      <div style="margin-top:14px">
+        <div class="row"><span style="font-size:14px;color:#cbd5e1">Overall feature completeness</span><span class="pct">~80%</span></div>
+        <div class="progress-bar"><div style="width:80%;background:linear-gradient(90deg,#34d399,#22d3ee)"></div></div>
+      </div>
+    </div>
+
+    <!-- Watch Out For -->
+    <div class="card amber">
+      <h2><span class="ico">!</span> Known Gaps &amp; Weaknesses</h2>
+      <ul>
+        <li>No automated tests yet (auth, playlist import, progress, AI parsing)</li>
+        <li>Assignment solver uses fallback for images — needs real OCR / multimodal AI</li>
+        <li>Zero CI — no automated check on every push</li>
+        <li>No deployment docs or production environment</li>
+        <li>Redis optional — not fully wired for socket scaling</li>
+        <li>Large initial JS bundle (~900 kB learning pages chunk)</li>
+        <li>No seed / demo data for quick local onboarding</li>
+        <li>Inconsistent throughput under load; rate limits are global, not per-tier</li>
+        <li><code style="background:#0f172a;padding:2px 8px;border-radius:6px;font-size:13px;color:#fca5a5">MONGODB_URI</code> vs <code style="background:#0f172a;padding:2px 8px;border-radius:6px;font-size:13px;color:#fca5a5">MONGO_URI</code> env naming drift in docs</li>
+      </ul>
+      <div class="note">All items recoverable &amp; tracked in docs/roadmap.md</div>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:28px">
+    <!-- Next Up -->
+    <div class="card blue">
+      <h2><span class="ico">▲</span> Future Upgrades — Next</h2>
+      <ul>
+        <li>Code-split frontend chunks to cut initial bundle below 500 kB</li>
+        <li>Real OCR / multimodal vision for assignment &amp; image questions</li>
+        <li>Automated test suite (Vitest + supertest) across key flows</li>
+        <li>Transcript retry &amp; manual import controls in the workspace</li>
+        <li>Mobile bottom navigation for protected pages</li>
+        <li>Dedicated video detail route (remove legacy route assumptions)</li>
+        <li>CI pipeline running <code style="background:#0f172a;padding:2px 8px;border-radius:6px;font-size:13px">npm run check</code></li>
+        <li>Development seed/demo data</li>
+      </ul>
+    </div>
+
+    <!-- Platform -->
+    <div class="card violet">
+      <h2><span class="ico">✦</span> Platform &amp; Scale</h2>
+      <ul>
+        <li>Centralized request logging + production-safe error reporting</li>
+        <li>Per-endpoint &amp; per-user-tier rate limiting</li>
+        <li>Redis caching &amp; multi-instance Socket.IO scaling</li>
+        <li>Feature flags and tiered access for premium users</li>
+        <li>Deployment guides: frontend (Vercel), backend (Render/Railway), MongoDB Atlas, Redis Cloud</li>
+        <li>Progressive Web App (PWA) + offline support</li>
+        <li>Analytics export (CSV/JSON) & gravity dashboard for instructors</li>
+        <li>Achievements, badges &amp; leaderboard gamification polish</li>
+        <li>AI model fallback tuning across OpenRouter / Gemini providers</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    <span>repo: github.com/aashi0201/Youtubelearning</span>
+    <span>branch: main · 7 commits</span>
+    <span>stack: React · Node · MongoDB · Supabase · Redis · Socket.IO</span>
+  </footer>
+</div>
+</body>
+</html>

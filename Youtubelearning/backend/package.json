@@ -6,7 +6,9 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "seed": "node scripts/seed.js",
+    "test": "node tests/env.test.js && node tests/auth.test.js"
   },
   "dependencies": {
     "@google/genai": "^1.44.0",
