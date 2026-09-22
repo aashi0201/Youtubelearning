@@ -1,6 +1,9 @@
 {
   "name": "youtubelearning",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node backend/server.js",
     "build": "npm --prefix backend install",

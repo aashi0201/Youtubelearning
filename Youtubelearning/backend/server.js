@@ -1,3 +1,13 @@
+// Polyfill global File for Node environments prior to v20 (required by undici / @google/genai)
+if (typeof globalThis.File === "undefined") {
+  try {
+    const { File } = require("node:buffer");
+    if (File) globalThis.File = File;
+  } catch (e) {
+    // fallback
+  }
+}
+
 require("dotenv").config();
 const dns = require("dns");
 if (dns.setDefaultResultOrder) {
