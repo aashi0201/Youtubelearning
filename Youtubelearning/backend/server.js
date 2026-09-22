@@ -147,6 +147,16 @@ async function startServer() {
     console.log(`Server running on port ${PORT} (0.0.0.0)`);
   });
 
+  // Dual listener so requests on both 5000 and 8080 succeed regardless of Railway config
+  const altPort = Number(PORT) === 5000 ? 8080 : 5000;
+  try {
+    const altServer = http.createServer(app);
+    altServer.listen(altPort, "0.0.0.0", () => {
+      console.log(`Secondary listener running on port ${altPort} (0.0.0.0)`);
+    });
+    altServer.on("error", () => {});
+  } catch (e) {}
+
   try {
     if (env.DATABASE_PROVIDER === "mongo") {
       console.log("Connecting to MongoDB...");
