@@ -362,13 +362,13 @@ router.get("/users/:userId", auth, async (req, res) => {
     let user = null;
     if (mongoose.Types.ObjectId.isValid(targetParam)) {
       user = await User.findById(targetParam)
-        .select("name username avatar bio stats level skills leetcode codeforces codechef tuf github location schoolCompany website socialLinks createdAt")
+        .select("-passwordHash -resetPasswordToken -resetPasswordExpires")
         .lean();
     }
 
     if (!user) {
       user = await User.findOne({ username: targetParam })
-        .select("name username avatar bio stats level skills leetcode codeforces codechef tuf github location schoolCompany website socialLinks createdAt")
+        .select("-passwordHash -resetPasswordToken -resetPasswordExpires")
         .lean();
     }
 
