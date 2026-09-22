@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const auth = require("../middleware/auth");
 const User = require("../models/User");
 const Connection = require("../models/Connection");
@@ -349,19 +350,33 @@ router.post("/messages", auth, async (req, res) => {
     res.json(messageData);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
 // [GET] /api/community/users/:userId - Full public profile
 router.get("/users/:userId", auth, async (req, res) => {
   try {
     const currentUserId = String(req.user.userId || req.user.id);
-    const targetUserId = req.params.userId;
+    const targetParam = req.params.userId;
 
-    const user = await User.findById(targetUserId)
-      .select("name username avatar bio stats level skills leetcode codeforces codechef tuf github location schoolCompany website socialLinks createdAt")
-      .lean();
+    let user = null;
+    if (mongoose.Types.ObjectId.isValid(targetParam)) {
+      user = await User.findById(targetParam)
+        .select("name username avatar bio stats level skills leetcode codeforces codechef tuf github location schoolCompany website socialLinks createdAt")
+        .lean();
+    }
+
+    if (!user) {
+      user = await User.findOne({ username: targetParam })
+        .select("name username avatar bio stats level skills leetcode codeforces codechef tuf github location schoolCompany website socialLinks createdAt")
+        .lean();
+    }
 
     if (!user) {
       return res.status(404).json({ success: false, message: "Student not found" });
     }
+
+    const targetUserId = String(user._id);
 
     // Check connection between current user and target user
     const connection = await Connection.findOne({
