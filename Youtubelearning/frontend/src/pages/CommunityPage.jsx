@@ -129,6 +129,17 @@ export default function CommunityPage() {
     }
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const chatWithId = params.get("chatWith");
+    if (chatWithId && students.length > 0) {
+      const target = students.find((s) => String(s._id || s.id) === String(chatWithId));
+      if (target) {
+        setSelectedChatUser(target);
+      }
+    }
+  }, [students]);
+
   const fetchRequests = async () => {
     try {
       const headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };

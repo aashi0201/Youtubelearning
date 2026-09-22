@@ -117,10 +117,18 @@ io.on("connection", (socket) => {
   });
 
   socket.on("typing", (data) => {
-    const { senderId, receiverId } = data;
-    const receiverSocketId = onlineUsers.get(receiverId);
+    const { senderId, receiverId } = data || {};
+    const receiverSocketId = onlineUsers.get(String(receiverId));
     if (receiverSocketId) {
-      io.to(receiverSocketId).emit("user-typing", { userId: senderId });
+      io.to(receiverSocketId).emit("user-typing", { userId: String(senderId) });
+    }
+  });
+
+  socket.on("stop-typing", (data) => {
+    const { senderId, receiverId } = data || {};
+    const receiverSocketId = onlineUsers.get(String(receiverId));
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("user-stop-typing", { userId: String(senderId) });
     }
   });
 

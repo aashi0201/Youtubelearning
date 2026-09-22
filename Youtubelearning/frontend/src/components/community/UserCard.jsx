@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { UserPlus, MessageSquare, Award, Flame, CheckCircle2 } from "lucide-react";
+import { UserPlus, MessageSquare, Award, Flame, CheckCircle2, ExternalLink } from "lucide-react";
 
 export default function UserCard({
   student,
@@ -113,10 +113,20 @@ export default function UserCard({
         <button
           type="button"
           onClick={() => onEndorse?.(student)}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 text-xs font-medium transition shadow-2xs"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 text-xs font-medium transition shadow-2xs cursor-pointer"
         >
           <Award size={13} />
           <span>🏅 Endorse</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onViewProfile?.(student)}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1.5 text-xs font-medium transition shadow-2xs cursor-pointer"
+          title="View Student Profile"
+        >
+          <ExternalLink size={13} />
+          <span className="hidden sm:inline">Profile</span>
         </button>
       </div>
     </motion.div>

@@ -28,6 +28,7 @@ const CommunityPage = lazy(() => import("./pages/CommunityPage"));
 const StreakPage = lazy(() => import("./pages/StreakPage"));
 const CodingDashboardPage = lazy(() => import("./pages/CodingDashboardPage"));
 const AssignmentSolverPage = lazy(() => import("./pages/AssignmentSolverPage"));
+const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage"));
 
 function PageLoader() {
   return (
@@ -75,6 +76,7 @@ function AppRoutes() {
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/profile" element={<SettingsPage />} />
+            <Route path="/profile/:userId" element={<PublicProfilePage />} />
             <Route path="/community" element={<CommunityPage />} />
             <Route path="/dashboard/streak" element={<StreakPage />} />
             <Route path="/coding-dashboard" element={<CodingDashboardPage />} />

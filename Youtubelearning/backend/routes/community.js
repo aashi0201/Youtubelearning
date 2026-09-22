@@ -349,6 +349,54 @@ router.post("/messages", auth, async (req, res) => {
     res.json(messageData);
   } catch (err) {
     res.status(500).json({ error: err.message });
+// [GET] /api/community/users/:userId - Full public profile
+router.get("/users/:userId", auth, async (req, res) => {
+  try {
+    const currentUserId = String(req.user.userId || req.user.id);
+    const targetUserId = req.params.userId;
+
+    const user = await User.findById(targetUserId)
+      .select("name username avatar bio stats level skills leetcode codeforces codechef tuf github location schoolCompany website socialLinks createdAt")
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    // Check connection between current user and target user
+    const connection = await Connection.findOne({
+      $or: [
+        { sender: currentUserId, receiver: targetUserId },
+        { sender: targetUserId, receiver: currentUserId },
+      ],
+      status: "accepted",
+    });
+
+    // Calculate total connections for this user
+    const userConnections = await Connection.find({
+      $or: [
+        { sender: targetUserId },
+        { receiver: targetUserId },
+      ],
+      status: "accepted",
+    }).lean();
+
+    let connectionsCount = userConnections.length;
+    if (connection && connectionsCount === 0) {
+      connectionsCount = 1;
+    }
+
+    res.json({
+      success: true,
+      user: {
+        ...user,
+        connectionsCount,
+        isConnected: Boolean(connection),
+      },
+    });
+  } catch (err) {
+    console.error("Get user profile error:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch user profile" });
   }
 });
 

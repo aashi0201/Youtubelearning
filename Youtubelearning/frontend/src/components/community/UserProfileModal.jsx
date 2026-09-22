@@ -69,10 +69,21 @@ export default function UserProfileModal({
             <X size={16} />
           </button>
 
-          {/* Banner */}
-          <div className="h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative overflow-hidden">
-            <div className="absolute inset-0 bg-black/10" />
-            <div className="absolute bottom-2 right-3 text-white/30 font-black text-4xl select-none tracking-tight">
+          {/* Sleek Slate-Indigo Modern Banner */}
+          <div className="h-32 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 relative overflow-hidden">
+            <div 
+              className="absolute inset-0 opacity-15"
+              style={{
+                backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
+                backgroundSize: "20px 20px"
+              }}
+            />
+            <div className="absolute top-3 left-4">
+              <span className="px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-md text-white/80 text-[10px] font-semibold tracking-wider uppercase border border-white/15">
+                StudyForge Peer
+              </span>
+            </div>
+            <div className="absolute bottom-2 right-4 text-white/10 font-black text-3xl select-none tracking-tight">
               STUDYFORGE
             </div>
           </div>
@@ -100,7 +111,7 @@ export default function UserProfileModal({
                   <button
                     type="button"
                     onClick={handleEditMyProfile}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-xs font-semibold shadow-md transition"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-xs font-semibold shadow-md transition cursor-pointer"
                   >
                     <Settings size={14} />
                     <span>Edit Profile & Photo</span>
@@ -119,7 +130,7 @@ export default function UserProfileModal({
                       <button
                         type="button"
                         onClick={() => onConnect?.(user._id || user.id)}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 text-xs font-semibold shadow-sm transition"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 text-xs font-semibold shadow-sm transition cursor-pointer"
                       >
                         <UserPlus size={14} />
                         <span>+ Connect</span>
@@ -132,10 +143,23 @@ export default function UserProfileModal({
                         onClose();
                         onOpenChat?.(user);
                       }}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 px-3.5 py-1.5 text-xs font-semibold transition shadow-2xs"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 px-3.5 py-1.5 text-xs font-semibold transition shadow-2xs cursor-pointer text-gray-800 dark:text-gray-200"
                     >
-                      <MessageSquare size={14} />
-                      <span>✉ Message</span>
+                      <MessageSquare size={14} className="text-indigo-600 dark:text-indigo-400" />
+                      <span>Message</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        navigate(`/profile/${user._id || user.id}`);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-1.5 text-xs font-semibold transition cursor-pointer text-gray-800 dark:text-gray-200"
+                      title="View Full Profile"
+                    >
+                      <ExternalLink size={13} />
+                      <span className="hidden sm:inline">Profile</span>
                     </button>
                   </>
                 )}
@@ -179,30 +203,32 @@ export default function UserProfileModal({
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-4 gap-2 mt-5 p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800 text-center">
-              <div>
-                <p className="text-base font-bold text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-1">
-                  <Users size={14} /> {connectionsCount}
+            <div className="grid grid-cols-4 gap-2.5 mt-5 p-3.5 rounded-2xl bg-gray-50/90 dark:bg-gray-800/60 border border-gray-200/80 dark:border-gray-800 text-center shadow-2xs">
+              <div className="p-1">
+                <p className="text-base font-extrabold text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-1">
+                  <Users size={15} /> {connectionsCount}
                 </p>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">Connections</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold mt-0.5">
+                  {connectionsCount === 1 ? "Connection" : "Connections"}
+                </p>
               </div>
-              <div>
-                <p className="text-base font-bold text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1">
-                  <Flame size={14} /> {streakDays}d
+              <div className="p-1">
+                <p className="text-base font-extrabold text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1">
+                  <Flame size={15} /> {streakDays}d
                 </p>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">Streak</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold mt-0.5">Streak</p>
               </div>
-              <div>
-                <p className="text-base font-bold text-purple-600 dark:text-purple-400 flex items-center justify-center gap-1">
-                  <Sparkles size={14} /> {xp}
+              <div className="p-1">
+                <p className="text-base font-extrabold text-purple-600 dark:text-purple-400 flex items-center justify-center gap-1">
+                  <Sparkles size={15} /> {xp}
                 </p>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">XP</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold mt-0.5">XP</p>
               </div>
-              <div>
-                <p className="text-base font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1">
-                  <Award size={14} /> {completedVideos}
+              <div className="p-1">
+                <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1">
+                  <Award size={15} /> {completedVideos}
                 </p>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">Completed</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold mt-0.5">Completed</p>
               </div>
             </div>
 
@@ -274,6 +300,19 @@ export default function UserProfileModal({
                 </a>
               )}
             </div>
+
+            {/* View Full Profile Action */}
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigate(`/profile/${user._id || user.id}`);
+              }}
+              className="w-full mt-4 py-2.5 px-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold text-xs flex items-center justify-center gap-2 border border-indigo-200/70 dark:border-indigo-800/60 transition cursor-pointer shadow-2xs"
+            >
+              <span>View Full Student Profile & Coding Stats</span>
+              <ExternalLink size={13} />
+            </button>
           </div>
         </motion.div>
       </div>
