@@ -26,24 +26,54 @@ router.get("/users", auth, async (req, res) => {
       .select(selectFields)
       .lean();
 
+    // Auto-migrate legacy pending connections to accepted
+    await Connection.updateMany(
+      { status: { $ne: "accepted" } },
+      { $set: { status: "accepted" } }
+    );
+
     // Calculate real accepted connection count for each user
     const acceptedConnections = await Connection.find({ status: "accepted" }).lean();
     const countMap = {};
     for (const conn of acceptedConnections) {
-      const s = String(conn.sender);
-      const r = String(conn.receiver);
-      countMap[s] = (countMap[s] || 0) + 1;
-      countMap[r] = (countMap[r] || 0) + 1;
+      const s = String(conn.sender?._id || conn.sender || "");
+      const r = String(conn.receiver?._id || conn.receiver || "");
+      if (s) countMap[s] = (countMap[s] || 0) + 1;
+      if (r) countMap[r] = (countMap[r] || 0) + 1;
     }
 
-    const enrichedUsers = users.map((u) => ({
-      ...u,
-      connectionsCount: countMap[String(u._id)] || 0,
-      stats: {
-        ...(u.stats || {}),
-        connectionsCount: countMap[String(u._id)] || 0,
-      },
-    }));
+    // Direct connections for current logged in user
+    const myConnections = await Connection.find({
+      $or: [
+        { sender: currentUserId },
+        { receiver: currentUserId }
+      ],
+      status: "accepted"
+    }).lean();
+
+    const myConnectedPeerIds = new Set(
+      myConnections.map((c) => {
+        const s = String(c.sender?._id || c.sender || "");
+        const r = String(c.receiver?._id || c.receiver || "");
+        return s === String(currentUserId) ? r : s;
+      })
+    );
+
+    const enrichedUsers = users.map((u) => {
+      const uId = String(u._id);
+      let cCount = countMap[uId] || 0;
+      if (myConnectedPeerIds.has(uId)) {
+        cCount = Math.max(cCount, 1);
+      }
+      return {
+        ...u,
+        connectionsCount: cCount,
+        stats: {
+          ...(u.stats || {}),
+          connectionsCount: cCount,
+        },
+      };
+    });
 
     res.json({
       success: true,
@@ -90,33 +120,36 @@ router.post("/send-request", auth, async (req, res) => {
     if (!receiverId) return res.status(400).json({ error: "Receiver ID required" });
 
     // Check existing
-    const existing = await Connection.findOne({
+    let connection = await Connection.findOne({
       $or: [
         { sender: senderId, receiver: receiverId },
         { sender: receiverId, receiver: senderId }
       ]
     });
 
-    if (existing) return res.status(400).json({ error: "Connection already exists or pending" });
-
-    const connection = new Connection({
-      sender: senderId,
-      receiver: receiverId,
-      status: "pending",
-    });
-
-    await connection.save();
+    if (connection) {
+      connection.status = "accepted";
+      await connection.save();
+    } else {
+      connection = new Connection({
+        sender: senderId,
+        receiver: receiverId,
+        status: "accepted",
+      });
+      await connection.save();
+    }
 
     const io = req.app.get("io");
     const onlineUsers = req.app.get("onlineUsers");
     if (io && onlineUsers) {
-      const receiverSocketId = onlineUsers.get(receiverId);
+      const receiverSocketId = onlineUsers.get(String(receiverId));
       if (receiverSocketId) {
+        io.to(receiverSocketId).emit("request_accepted", { senderId, receiverId });
         io.to(receiverSocketId).emit("new_request", { senderId, receiverId });
       }
     }
 
-    res.json({ success: true, message: "Connection request sent" });
+    res.json({ success: true, message: "Connected successfully", connection });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -200,6 +233,16 @@ router.get("/requests", auth, async (req, res) => {
 router.get("/connections", auth, async (req, res) => {
   try {
     const userId = req.user.userId || req.user.id;
+
+    // Ensure all connections involving this user are active
+    await Connection.updateMany(
+      {
+        $or: [{ sender: userId }, { receiver: userId }],
+        status: { $ne: "accepted" }
+      },
+      { $set: { status: "accepted" } }
+    );
+
     const connections = await Connection.find({
       $or: [
         { sender: userId, status: "accepted" },
@@ -210,16 +253,18 @@ router.get("/connections", auth, async (req, res) => {
     const acceptedConnections = await Connection.find({ status: "accepted" }).lean();
     const countMap = {};
     for (const conn of acceptedConnections) {
-      const s = String(conn.sender);
-      const r = String(conn.receiver);
-      countMap[s] = (countMap[s] || 0) + 1;
-      countMap[r] = (countMap[r] || 0) + 1;
+      const s = String(conn.sender?._id || conn.sender || "");
+      const r = String(conn.receiver?._id || conn.receiver || "");
+      if (s) countMap[s] = (countMap[s] || 0) + 1;
+      if (r) countMap[r] = (countMap[r] || 0) + 1;
     }
 
     const users = connections.map((c) => {
-      const other = String(c.sender._id) === String(userId) ? c.receiver : c.sender;
+      const sId = String(c.sender?._id || c.sender || "");
+      const other = sId === String(userId) ? c.receiver : c.sender;
       const otherObj = other?.toObject ? other.toObject() : other || {};
-      const cCount = countMap[String(otherObj._id)] || 0;
+      const otherId = String(otherObj?._id || "");
+      const cCount = Math.max(countMap[otherId] || 0, 1);
       return {
         ...otherObj,
         user: {

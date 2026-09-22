@@ -35,7 +35,8 @@ export default function UserProfileModal({
   if (!isOpen || !user) return null;
 
   const isSelf = String(user._id || user.id) === String(currentUser?._id || currentUser?.id);
-  const connectionsCount = user.connectionsCount ?? user.stats?.connectionsCount ?? 0;
+  const rawConnections = Number(user.connectionsCount ?? user.stats?.connectionsCount ?? 0);
+  const connectionsCount = isConnected ? Math.max(rawConnections, 1) : rawConnections;
   const streakDays = user.stats?.streakDays || 0;
   const xp = user.stats?.xp || 0;
   const completedVideos = user.stats?.completedVideos || 0;

@@ -13,7 +13,8 @@ export default function UserCard({
   isPending,
 }) {
   const titleText = student.bio || student.major || `Computer Science Student • @${student.username || "student"}`;
-  const connectionsCount = student.connectionsCount ?? student.stats?.connectionsCount ?? 0;
+  const rawCount = Number(student.connectionsCount ?? student.stats?.connectionsCount ?? 0);
+  const connectionsCount = isConnected ? Math.max(rawCount, 1) : rawCount;
 
   return (
     <motion.div
@@ -69,7 +70,7 @@ export default function UserCard({
 
           <div className="flex items-center gap-3 text-[11px] text-gray-400 dark:text-gray-500 mt-1">
             <span className="font-medium text-gray-700 dark:text-gray-300">
-              {connectionsCount} Connections
+              {connectionsCount} {connectionsCount === 1 ? "Connection" : "Connections"}
             </span>
             <span>•</span>
             <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold">

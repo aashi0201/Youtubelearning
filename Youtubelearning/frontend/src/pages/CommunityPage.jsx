@@ -169,7 +169,7 @@ export default function CommunityPage() {
     try {
       const headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
       await axios.post(`${API_BASE}/community/send-request`, { receiverId }, { headers });
-      showToast("Connection request sent!");
+      showToast("Connected successfully! 🎉");
       fetchInitialData();
     } catch (err) {
       console.error("Error connecting:", err);
@@ -255,8 +255,18 @@ export default function CommunityPage() {
       s.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const connectionIds = new Set(connections.map((c) => String(c.user?._id || c.user?.id || c._id)));
-  const pendingIds = new Set(requests.map((r) => String(r.sender?._id || r.sender?.id)));
+  const connectionIds = new Set(
+    connections.map((c) => {
+      const myId = String(currentUser?._id || currentUser?.id || "");
+      if (c.sender && c.receiver) {
+        const s = String(c.sender?._id || c.sender || "");
+        const r = String(c.receiver?._id || c.receiver || "");
+        return s === myId ? r : s;
+      }
+      return String(c.user?._id || c.user?.id || c._id || "");
+    })
+  );
+  const pendingIds = new Set(requests.map((r) => String(r.sender?._id || r.sender?.id || "")));
 
   // Suggested friends list for sidebar
   const suggestedFriends = students.filter(
