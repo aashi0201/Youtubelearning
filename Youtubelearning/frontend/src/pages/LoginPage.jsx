@@ -411,37 +411,19 @@ export default function LoginPage() {
             )}
 
             {/* Social Sign-In Buttons */}
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="mt-6 flex justify-center w-full">
               {/* Google OAuth */}
               <div className="w-full flex justify-center items-center overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-800/80 transition-colors shadow-xs py-0.5">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={() => setError("Google login could not be completed.")}
                   theme="outline"
-                  size="medium"
+                  size="large"
                   shape="rectangular"
                   text="signin_with"
                   width="100%"
                 />
               </div>
-
-              {/* Quick Demo Login */}
-              <button
-                type="button"
-                onClick={() => {
-                  setForm({
-                    email: "demo@studyforge.io",
-                    password: "Password@123",
-                    remember: true,
-                  });
-                }}
-                className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-800/80 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 transition-colors shadow-xs"
-              >
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1877F2] text-white">
-                  <span className="font-bold text-[11px]">f</span>
-                </div>
-                <span>Auto-Fill Demo</span>
-              </button>
             </div>
 
             {/* Subtle Minimalist Divider */}
