@@ -291,7 +291,7 @@ export default function ELearningPlatformPage() {
                 <GraduationCap size={22} />
               </div>
               <div>
-                <h1 className="font-extrabold text-base tracking-tight text-[#111827]">EduPulse</h1>
+                <h1 className="font-extrabold text-base tracking-tight text-[#111827]">StudyForge</h1>
                 <p className="text-[10px] font-semibold text-orange-500 uppercase tracking-widest">Mastery Hub</p>
               </div>
             </div>

@@ -1181,7 +1181,7 @@ export default function CodingDashboardPage() {
                         <Users size={16} className="shrink-0" />
                         <span>
                           Viewing public stats for <strong>@{inspectedProfile.handle}</strong> on{" "}
-                          <strong>{inspectedProfile.platform.toUpperCase()}</strong>. This tracking is independent and does not affect your official LearnSphere Rating (LSR) in Profile.
+                          <strong>{inspectedProfile.platform.toUpperCase()}</strong>. This tracking is independent and does not affect your official StudyForge Rating (SFR) in Profile.
                         </span>
                       </div>
                       <button

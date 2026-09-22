@@ -4,6 +4,7 @@
   "scripts": {
     "start": "concurrently -k -n \"backend,frontend\" -c \"yellow,cyan\" \"npm -C backend run dev\" \"npm -C frontend run dev\"",
     "dev": "npm start",
+    "build": "npm -C frontend run build",
     "test": "npm -C backend run test",
     "frontend:dev": "npm -C frontend run dev",
     "frontend:build": "npm -C frontend run build",

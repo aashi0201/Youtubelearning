@@ -1,5 +1,5 @@
 /**
- * LearnSphere Rating (LSR) Engine & Achievement System
+ * StudyForge Rating (SFR) Engine & Achievement System
  * 
  * Accurately scores user learning effort, curriculum completion,
  * retention/quizzes, coding problem mastery, and study consistency.
@@ -119,7 +119,7 @@ export function getRatingTier(rating = 100) {
 }
 
 /**
- * Calculates the comprehensive LearnSphere Rating 2.0 (5-Pillar Model)
+ * Calculates the comprehensive StudyForge Rating 2.0 (5-Pillar Model)
  */
 export function calculateLSRating({
   codingStats = {},
@@ -369,6 +369,7 @@ export function calculateLSRating({
 /**
  * Dynamically evaluates genuine achievement badges
  */
+export const calculateSFRating = calculateLSRating;
 export function evaluateBadges({
   codingStats = {},
   watchTimeSec = 0,

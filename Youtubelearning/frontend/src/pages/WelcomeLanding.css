@@ -1,6 +1,6 @@
 /* ============ WELCOME LANDING DESIGN TOKENS & STYLES ============ */
 .welcome-scope {
-  /* Light Mode - Slate Palette matching LearnSphere */
+  /* Light Mode - Slate Palette matching StudyForge */
   --bg: #f8fafc;
   --bg-soft: #f1f5f9;
   --surface: #ffffff;
@@ -46,7 +46,7 @@
   position: relative;
 }
 
-/* Dark mode adjustments - Slate Navy matching LearnSphere index.css */
+/* Dark mode adjustments - Slate Navy matching StudyForge index.css */
 html.dark .welcome-scope,
 :root[data-theme="dark"] .welcome-scope {
   --bg: #0b1120;

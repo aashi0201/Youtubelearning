@@ -182,7 +182,7 @@ async function sendOtpEmail(to, otp, purpose = "login") {
       html: `
         <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;color:#0f172a">
           <div style="margin-bottom:20px">
-            <span style="font-weight:800;font-size:18px;color:#2563eb">LearnSphere</span>
+            <span style="font-weight:800;font-size:18px;color:#2563eb">StudyForge</span>
           </div>
           <h2 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 10px 0">${title}</h2>
           <p style="font-size:14px;color:#475569;margin:0 0 22px 0;line-height:1.6">${message}</p>

@@ -132,7 +132,7 @@ export const PLATFORM_HEATMAP_THEMES = {
   },
   learnsphere: {
     id: "learnsphere",
-    label: "LearnSphere Tracks",
+    label: "StudyForge Tracks",
     badge: "Video Lectures & Recall Quizzes",
     icon: Video,
     accent: "text-[#8090fd]",
@@ -271,7 +271,7 @@ export default function SettingsPage() {
     avatar: user?.avatar || "",
     bio: user?.bio || "Full-Stack Engineer & Algorithm Enthusiast. Binge-learning system architecture and algorithms daily.",
     location: user?.location || "San Francisco, CA",
-    schoolCompany: user?.schoolCompany || "LearnSphere Engineering",
+    schoolCompany: user?.schoolCompany || "StudyForge Engineering",
     website: user?.website || "https://github.com",
     leetcode: user?.leetcode || "",
     codeforces: user?.codeforces || "",
@@ -1186,7 +1186,7 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-1.5 rounded-full border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-2.5 py-0.5 text-xs font-mono">
                     <span className="font-bold text-[#8090fd]">LC: @{profileForm.leetcode}</span>
                     {verifiedPlatforms.leetcode ? (
-                      <span title="Ownership Verified by LearnSphere" className="flex items-center text-emerald-500 gap-0.5">
+                      <span title="Ownership Verified by StudyForge" className="flex items-center text-emerald-500 gap-0.5">
                         <ShieldCheck size={12} />
                         <span className="text-[10px] font-sans font-bold">Verified</span>
                       </span>
@@ -1244,7 +1244,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Right Block: LearnSphere Rating Badge & Platform Sync */}
+          {/* Right Block: StudyForge Rating Badge & Platform Sync */}
           <div className="flex flex-wrap lg:flex-col items-start lg:items-end gap-3 shrink-0 border-t lg:border-t-0 border-black/5 dark:border-white/5 pt-4 lg:pt-0">
             <div className="flex items-center gap-3">
               {/* Streak Card */}
@@ -1258,16 +1258,16 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* LearnSphere Rating Badge */}
+              {/* StudyForge Rating Badge */}
               <button
                 onClick={() => setShowRatingModal(true)}
                 className="flex items-center gap-2.5 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/15 border border-indigo-500/20 px-3.5 py-2 transition cursor-pointer text-left"
-                title="View LearnSphere Rating Formula & Breakdown"
+                title="View StudyForge Rating Formula & Breakdown"
               >
                 <Zap size={18} className="text-[#8090fd]" />
                 <div>
                   <div className="flex items-center gap-1">
-                    <span className="text-[10px] uppercase font-bold text-[#8090fd] block leading-tight">LSR Score</span>
+                    <span className="text-[10px] uppercase font-bold text-[#8090fd] block leading-tight">SFR Score</span>
                     <Info size={11} className="text-[#8090fd]/70" />
                   </div>
                   <span className="text-sm font-black text-gray-900 dark:text-white">
@@ -1404,13 +1404,13 @@ export default function SettingsPage() {
       {/* 3. TAB 1: PLATFORM OVERVIEW & SKILLS */}
       {activeTab === "overview" && (
         <div className="space-y-6">
-          {/* Row 0: LearnSphere Rating Tier Card Banner */}
+          {/* Row 0: StudyForge Rating Tier Card Banner */}
           <div className="rounded-3xl border border-indigo-500/20 bg-gradient-to-r from-indigo-500/[0.07] via-purple-500/[0.05] to-sky-500/[0.07] p-6 sm:p-7 shadow-xl">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div className="space-y-2.5">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-[#8090fd]/20 text-[#8090fd] px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider">
-                    LearnSphere Rating 2.0
+                    StudyForge Rating 2.0
                   </span>
                   <span className={`text-xs font-bold ${lsRating.tier.color} bg-black/5 dark:bg-white/5 px-2.5 py-0.5 rounded-full border border-current/20`}>
                     {lsRating.tier.name} • {lsRating.tier.tag}
@@ -1502,7 +1502,7 @@ export default function SettingsPage() {
                     LeetCode account @{profileForm.leetcode} is unverified.
                   </span>
                   <span className="text-gray-600 dark:text-gray-300 text-[11px]">
-                    To prevent false profile claims and credit your {codingStats.totalSolved} solved problems (+{lsRating.pendingProblemPoints} pts) to your official LearnSphere Rating, verify ownership.
+                    To prevent false profile claims and credit your {codingStats.totalSolved} solved problems (+{lsRating.pendingProblemPoints} pts) to your official StudyForge Rating, verify ownership.
                   </span>
                 </div>
               </div>
@@ -1682,7 +1682,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Right Box: Contest Standing & LearnSphere Video Tracks (5 Cols) */}
+            {/* Right Box: Contest Standing & StudyForge Video Tracks (5 Cols) */}
             <div className="lg:col-span-5 rounded-3xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0e1526] p-6 sm:p-7 shadow-xl flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between">
@@ -1695,7 +1695,7 @@ export default function SettingsPage() {
                     </span>
                   ) : (
                     <span className="rounded-full bg-[#8090fd]/15 text-[#8090fd] px-2.5 py-0.5 text-[11px] font-bold">
-                      LearnSphere OS
+                      StudyForge OS
                     </span>
                   )}
                 </div>
@@ -2079,7 +2079,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* LearnSphere Tracks Quick Card */}
+            {/* StudyForge Tracks Quick Card */}
             <div
               onClick={() => setSelectedHeatmapPlatform("learnsphere")}
               className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
@@ -2091,9 +2091,9 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#8090fd]/20 text-[#8090fd] font-bold text-xs">
-                    LS
+                    SF
                   </div>
-                  <span className="text-xs font-bold text-gray-900 dark:text-white">LearnSphere Tracks</span>
+                  <span className="text-xs font-bold text-gray-900 dark:text-white">StudyForge Tracks</span>
                 </div>
                 {selectedHeatmapPlatform === "learnsphere" && (
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#8090fd] text-white">Active</span>
@@ -2227,7 +2227,7 @@ export default function SettingsPage() {
                   )}
                   {hoveredDay.breakdown.learnsphere > 0 && (
                     <span className="px-2 py-0.5 rounded-md bg-indigo-500/15 text-[#8090fd] font-bold border border-indigo-500/20">
-                      LearnSphere: {hoveredDay.breakdown.learnsphere}
+                      StudyForge: {hoveredDay.breakdown.learnsphere}
                     </span>
                   )}
                   {hoveredDay.breakdown.github > 0 && (
@@ -2268,7 +2268,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed pt-1">
-                  To prevent anyone from falsely claiming high-ranking handles, you must verify account ownership before submissions are credited to your official LearnSphere Rating (LSR).
+                  To prevent anyone from falsely claiming high-ranking handles, you must verify account ownership before submissions are credited to your official StudyForge Rating (SFR).
                 </p>
               </div>
 
@@ -2972,9 +2972,25 @@ export default function SettingsPage() {
                 <form onSubmit={handleResetPasswordWithOtp} className="space-y-3 pt-2">
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 dark:text-gray-300 mb-1">
-                        6-Digit Code *
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                          6-Digit Code *
+                        </label>
+                        <button
+                          type="button"
+                          disabled={forgotPasswordState.loading || forgotPasswordState.cooldown > 0}
+                          onClick={handleSendResetOtp}
+                          className="text-[11px] font-bold text-[#8090fd] hover:text-[#6c7ff8] hover:underline disabled:opacity-50 cursor-pointer transition"
+                        >
+                          {forgotPasswordState.loading && !forgotPasswordState.otpSent
+                            ? "Sending..."
+                            : forgotPasswordState.cooldown > 0
+                            ? `Resend in ${forgotPasswordState.cooldown}s`
+                            : forgotPasswordState.otpSent
+                            ? "Resend Code"
+                            : "Send Code"}
+                        </button>
+                      </div>
                       <input
                         type="text"
                         maxLength={6}
@@ -3074,7 +3090,7 @@ export default function SettingsPage() {
             <div>
               <h3 className="font-bold text-sm text-gray-900 dark:text-white">Appearance & Theme</h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Switch between Light Mode and Dark Mode across LearnSphere.
+                Switch between Light Mode and Dark Mode across StudyForge.
               </p>
             </div>
             <ThemeToggle />
@@ -3599,7 +3615,7 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <h3 className="text-base font-black text-gray-900 dark:text-white">
-                      LearnSphere Rating 2.0 (LSR) Model
+                      StudyForge Rating 2.0 (SFR) Model
                     </h3>
                     <p className="text-[11px] text-gray-500 dark:text-gray-400">
                       Multi-dimensional Elo-inspired evaluation across 5 verified learning pillars

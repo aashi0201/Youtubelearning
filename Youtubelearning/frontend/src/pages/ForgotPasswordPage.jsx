@@ -29,13 +29,24 @@ export default function ForgotPasswordPage() {
   const [devOtp, setDevOtp] = useState("");
 
   const [loading, setLoading] = useState(false);
+  const [sendingCode, setSendingCode] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const otpRefs = useRef([]);
 
+  // Countdown timer for resend cooldown
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((c) => Math.max(0, c - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
   // Step 1: Send OTP to email or username
   const handleSendOtp = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setError("");
     setMessage("");
 
@@ -51,6 +62,7 @@ export default function ForgotPasswordPage() {
       setMessage(res?.message || "A 6-digit reset code has been sent.");
       if (res?.email) setTargetEmail(res.email);
       if (res?.devOtp) setDevOtp(res.devOtp);
+      setCooldown(45);
       setStep(2);
       setTimeout(() => {
         otpRefs.current[0]?.focus();
@@ -62,6 +74,37 @@ export default function ForgotPasswordPage() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Step 2: Send / Resend code while resetting password
+  const handleResendCode = async () => {
+    if (cooldown > 0 || sendingCode) return;
+    const cleanInput = (targetEmail || identifier).trim().toLowerCase().replace(/^@/, "");
+    if (!cleanInput) {
+      setError("Please enter your account email or @username.");
+      setStep(1);
+      return;
+    }
+
+    setError("");
+    setMessage("");
+
+    try {
+      setSendingCode(true);
+      const res = await forgotPasswordOtp(cleanInput);
+      setMessage(res?.message || "A new 6-digit reset code has been sent!");
+      if (res?.email) setTargetEmail(res.email);
+      if (res?.devOtp) setDevOtp(res.devOtp);
+      setCooldown(45);
+      setOtpDigits(["", "", "", "", "", ""]);
+      setTimeout(() => otpRefs.current[0]?.focus(), 150);
+    } catch (err) {
+      setError(
+        err?.response?.data?.error || "Failed to send reset code. Please try again."
+      );
+    } finally {
+      setSendingCode(false);
     }
   };
 
@@ -269,16 +312,39 @@ export default function ForgotPasswordPage() {
                     <label className="font-bold text-gray-700 dark:text-gray-300">
                       6-Digit Recovery Code
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setStep(1);
-                        setError("");
-                      }}
-                      className="text-[#8090fd] font-bold hover:underline cursor-pointer"
-                    >
-                      Change Account
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={sendingCode || cooldown > 0}
+                        onClick={handleResendCode}
+                        className="text-xs font-bold text-[#8090fd] hover:text-[#6c7ff8] disabled:opacity-50 disabled:hover:no-underline hover:underline cursor-pointer flex items-center gap-1 transition"
+                      >
+                        {sendingCode ? (
+                          <>
+                            <RotateCw size={11} className="animate-spin" />
+                            <span>Sending...</span>
+                          </>
+                        ) : cooldown > 0 ? (
+                          <span>Resend ({cooldown}s)</span>
+                        ) : (
+                          <>
+                            <RotateCw size={11} />
+                            <span>Send Code</span>
+                          </>
+                        )}
+                      </button>
+                      <span className="text-gray-300 dark:text-gray-600">•</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStep(1);
+                          setError("");
+                        }}
+                        className="text-gray-500 dark:text-gray-400 font-medium hover:underline cursor-pointer"
+                      >
+                        Change
+                      </button>
+                    </div>
                   </div>
 
                   <div className="flex justify-between gap-1.5" onPaste={handlePaste}>
@@ -295,6 +361,20 @@ export default function ForgotPasswordPage() {
                         className="w-11 sm:w-12 h-12 text-center font-mono text-lg font-black rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 text-gray-900 dark:text-white outline-none focus:border-[#8090fd] focus:ring-2 focus:ring-[#8090fd]/20"
                       />
                     ))}
+                  </div>
+
+                  <div className="flex items-center justify-between mt-2.5 px-0.5 text-xs">
+                    <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                      Didn't receive the email code?
+                    </span>
+                    <button
+                      type="button"
+                      disabled={sendingCode || cooldown > 0}
+                      onClick={handleResendCode}
+                      className="font-bold text-[#8090fd] hover:text-[#6c7ff8] disabled:opacity-50 hover:underline cursor-pointer flex items-center gap-1"
+                    >
+                      {sendingCode ? "Sending..." : cooldown > 0 ? `Resend code in ${cooldown}s` : "Send Code Again"}
+                    </button>
                   </div>
                 </div>
 

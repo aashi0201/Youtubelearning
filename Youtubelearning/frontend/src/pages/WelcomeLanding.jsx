@@ -471,7 +471,7 @@ export default function WelcomeLanding() {
               </defs>
             </svg>
             <div className="flex flex-col leading-none">
-              <span className="brand-word font-bold tracking-tight">LearnSphere</span>
+              <span className="brand-word font-bold tracking-tight">StudyForge</span>
               <span className="text-[10px] font-semibold text-muted tracking-wider uppercase">Interactive Studio</span>
             </div>
           </Link>
@@ -1779,7 +1779,7 @@ export default function WelcomeLanding() {
                   </defs>
                 </svg>
                 <div className="flex flex-col leading-none">
-                  <span className="brand-word font-bold tracking-tight">LearnSphere</span>
+                  <span className="brand-word font-bold tracking-tight">StudyForge</span>
                   <span className="text-[10px] font-semibold text-muted tracking-wider uppercase">Interactive Studio</span>
                 </div>
               </Link>
@@ -1807,7 +1807,7 @@ export default function WelcomeLanding() {
             </div>
           </div>
           <div className="foot-bottom">
-            <p>© 2026 LearnSphere. Built for learners who master concepts through video.</p>
+            <p>© 2026 StudyForge. Built for learners who master concepts through video.</p>
             <div className="social-icons">
               <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24"><use href="#i-yt" /></svg></a>
             </div>

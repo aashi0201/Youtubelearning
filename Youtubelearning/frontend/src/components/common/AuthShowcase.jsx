@@ -35,7 +35,7 @@ export default function AuthShowcase({
           </div>
           <div>
             <span className="text-lg font-black tracking-tight text-white drop-shadow-xs">
-              LearnSphere
+              StudyForge
             </span>
             <span className="block text-[10px] font-medium tracking-widest uppercase text-white/70">
               Learning OS

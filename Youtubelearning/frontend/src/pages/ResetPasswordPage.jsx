@@ -83,9 +83,12 @@ export default function ResetPasswordPage() {
           </button>
         </form>
 
-        <div className="mt-4 text-sm">
-          <Link to="/login" className="text-blue-300">
+        <div className="mt-4 flex items-center justify-between text-xs text-muted">
+          <Link to="/login" className="text-blue-400 hover:underline">
             Back to login
+          </Link>
+          <Link to="/forgot-password" className="text-blue-400 hover:underline font-semibold">
+            Send 6-digit code instead
           </Link>
         </div>
       </div>

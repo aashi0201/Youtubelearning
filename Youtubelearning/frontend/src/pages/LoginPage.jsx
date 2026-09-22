@@ -430,7 +430,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => {
                   setForm({
-                    email: "demo@learnsphere.io",
+                    email: "demo@studyforge.io",
                     password: "Password@123",
                     remember: true,
                   });

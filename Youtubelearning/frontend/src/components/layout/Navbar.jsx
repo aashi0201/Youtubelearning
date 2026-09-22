@@ -25,7 +25,7 @@ export default function Navbar() {
               Interactive Learning Suite
             </p>
             <h1 className="truncate text-sm font-extrabold md:text-base text-gray-900 dark:text-white">
-              EduPulse Workspace
+              StudyForge Workspace
             </h1>
           </div>
         </Link>

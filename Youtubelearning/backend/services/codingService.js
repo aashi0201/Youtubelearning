@@ -378,11 +378,11 @@ async function fetchGitHubStats(rawInput, forceRefresh = false) {
     const [userRes, eventsRes] = await Promise.allSettled([
       axios.get(`https://api.github.com/users/${cleanUser}`, {
         timeout: 5000,
-        headers: { "User-Agent": "LearnSphere" },
+        headers: { "User-Agent": "StudyForge" },
       }),
       axios.get(`https://api.github.com/users/${cleanUser}/events/public?per_page=100`, {
         timeout: 5000,
-        headers: { "User-Agent": "LearnSphere" },
+        headers: { "User-Agent": "StudyForge" },
       }),
     ]);
 

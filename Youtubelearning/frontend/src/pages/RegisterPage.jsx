@@ -250,7 +250,7 @@ export default function RegisterPage() {
                 onClick={() => {
                   setForm({
                     name: "Alex Learner",
-                    email: "alex.demo@learnsphere.io",
+                    email: "alex.demo@studyforge.io",
                     password: "Password@123",
                     confirmPassword: "Password@123",
                     agree: true,
