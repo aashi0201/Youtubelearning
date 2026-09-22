@@ -141,22 +141,24 @@ initCron(io);
 console.log("Configuration validated");
 
 async function startServer() {
+  const PORT = process.env.PORT || env.PORT || 5000;
+
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT} (0.0.0.0)`);
+  });
+
   try {
     if (env.DATABASE_PROVIDER === "mongo") {
-      await mongoose.connect(env.MONGO_URI);
-      console.log("MongoDB connected");
+      console.log("Connecting to MongoDB...");
+      await mongoose.connect(env.MONGO_URI, {
+        serverSelectionTimeoutMS: 10000,
+      });
+      console.log("MongoDB connected successfully");
     } else {
       console.log("MongoDB skipped because DATABASE_PROVIDER=supabase");
     }
-
-    const PORT = env.PORT;
-
-    server.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on port ${PORT} (0.0.0.0)`);
-    });
   } catch (error) {
-    console.error("Server startup error:", error.message);
-    process.exit(1);
+    console.error("MongoDB connection warning:", error.message);
   }
 }
 
