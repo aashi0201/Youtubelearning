@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 export const ThemeContext = createContext({
-  theme: "dark",
+  theme: "light",
   toggleTheme: () => {},
   setTheme: () => {},
 });
@@ -10,10 +10,10 @@ function getSavedTheme() {
   try {
     const saved = localStorage.getItem("theme");
     if (saved === "light" || saved === "dark") return saved;
-    // Default to dark mode for consistent theme
-    return "dark";
+    // Default to light mode
+    return "light";
   } catch {
-    return "dark";
+    return "light";
   }
 }
 
