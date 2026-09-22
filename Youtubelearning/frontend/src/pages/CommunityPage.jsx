@@ -17,15 +17,18 @@ import {
   Sparkles,
 } from "lucide-react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import UserCard from "../components/community/UserCard";
 import ChatBox from "../components/community/ChatBox";
 import RequestPanel from "../components/community/RequestPanel";
+import UserProfileModal from "../components/community/UserProfileModal";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 const API_BASE = import.meta.env.VITE_API_URL || `${BACKEND_URL}/api`;
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || BACKEND_URL;
 
 export default function CommunityPage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("all"); // "all" | "connections" | "leaderboard" | "requests"
   const [students, setStudents] = useState([]);
   const [connections, setConnections] = useState([]);
@@ -35,6 +38,7 @@ export default function CommunityPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarSearchQuery, setSidebarSearchQuery] = useState("");
   const [selectedChatUser, setSelectedChatUser] = useState(null);
+  const [selectedProfileUser, setSelectedProfileUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [socket, setSocket] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -186,14 +190,53 @@ export default function CommunityPage() {
   };
 
   const handleSendMessage = async (content) => {
-    if (!selectedChatUser || !socket) return;
+    if (!selectedChatUser || !content.trim()) return;
+    const targetId = String(selectedChatUser._id || selectedChatUser.id);
+
+    // 1. Emit via socket for instant live updates
+    if (socket) {
+      try {
+        socket.emit("sendMessage", {
+          receiverId: targetId,
+          message: content.trim(),
+        });
+      } catch (err) {
+        console.error("Socket send error:", err);
+      }
+    }
+
+    // 2. Also save via REST to guarantee DB persistence
     try {
-      socket.emit("sendMessage", {
-        receiverId: selectedChatUser._id || selectedChatUser.id,
-        message: content,
-      });
+      const headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
+      const res = await axios.post(
+        `${API_BASE}/community/messages`,
+        {
+          receiverId: targetId,
+          message: content.trim(),
+        },
+        { headers }
+      );
+
+      if (res.data) {
+        setMessages((prev) => {
+          const exists = prev.some((m) => m._id && m._id === res.data._id);
+          if (exists) return prev;
+          return [...prev, res.data];
+        });
+      }
     } catch (err) {
-      console.error("Error sending message:", err);
+      console.error("Error persisting message:", err);
+    }
+  };
+
+  const handleViewProfile = (student) => {
+    if (!student) return;
+    const myId = String(currentUser?._id || currentUser?.id || "");
+    const targetId = String(student._id || student.id || "");
+    if (myId && targetId && myId === targetId) {
+      navigate("/settings");
+    } else {
+      setSelectedProfileUser(student);
     }
   };
 
@@ -212,12 +255,12 @@ export default function CommunityPage() {
       s.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const connectionIds = new Set(connections.map((c) => c.user?._id || c.user?.id));
-  const pendingIds = new Set(requests.map((r) => r.sender?._id || r.sender?.id));
+  const connectionIds = new Set(connections.map((c) => String(c.user?._id || c.user?.id || c._id)));
+  const pendingIds = new Set(requests.map((r) => String(r.sender?._id || r.sender?.id)));
 
   // Suggested friends list for sidebar
   const suggestedFriends = students.filter(
-    (s) => !connectionIds.has(s._id) && s._id !== currentUser?.id
+    (s) => !connectionIds.has(String(s._id)) && String(s._id) !== String(currentUser?.id)
   ).filter((s) =>
     s.name.toLowerCase().includes(sidebarSearchQuery.toLowerCase()) ||
     s.username.toLowerCase().includes(sidebarSearchQuery.toLowerCase())
@@ -348,9 +391,10 @@ export default function CommunityPage() {
                       onConnect={handleConnect}
                       onOpenChat={setSelectedChatUser}
                       onEndorse={handleEndorse}
-                      isOnline={onlineUsers.includes(student._id)}
-                      isConnected={connectionIds.has(student._id)}
-                      isPending={pendingIds.has(student._id)}
+                      onViewProfile={handleViewProfile}
+                      isOnline={onlineUsers.includes(String(student._id))}
+                      isConnected={connectionIds.has(String(student._id))}
+                      isPending={pendingIds.has(String(student._id))}
                     />
                   ))
                 )}
@@ -367,17 +411,21 @@ export default function CommunityPage() {
                     <p className="text-xs text-gray-500">Connect with students in the Discovery tab to build your network.</p>
                   </div>
                 ) : (
-                  connections.map((c) => (
-                    <UserCard
-                      key={c._id}
-                      student={c.user}
-                      onConnect={handleConnect}
-                      onOpenChat={setSelectedChatUser}
-                      onEndorse={handleEndorse}
-                      isOnline={onlineUsers.includes(c.user._id)}
-                      isConnected={true}
-                    />
-                  ))
+                  connections.map((c) => {
+                    const studentObj = c.user || c;
+                    return (
+                      <UserCard
+                        key={c._id || studentObj._id}
+                        student={studentObj}
+                        onConnect={handleConnect}
+                        onOpenChat={setSelectedChatUser}
+                        onEndorse={handleEndorse}
+                        onViewProfile={handleViewProfile}
+                        isOnline={onlineUsers.includes(String(studentObj._id))}
+                        isConnected={true}
+                      />
+                    );
+                  })
                 )}
               </div>
             )}
@@ -472,26 +520,30 @@ export default function CommunityPage() {
                     className="bg-slate-50/80 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800/80 rounded-xl p-3.5 space-y-3 transition hover:border-indigo-200 dark:hover:border-indigo-900/60 shadow-2xs"
                   >
                     {/* Top Identity Row */}
-                    <div className="flex items-center gap-2.5">
+                    <div
+                      onClick={() => handleViewProfile(student)}
+                      className="flex items-center gap-2.5 cursor-pointer group/user"
+                      title={`View ${student.name}'s profile`}
+                    >
                       <div className="relative shrink-0">
                         <img
-                          src={student.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${student.username}`}
-                          className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-800"
+                          src={student.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${student.username || "sf"}`}
+                          className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-800 group-hover/user:ring-indigo-500 group-hover/user:scale-105 transition-all"
                           alt={student.name}
                         />
                         <span
                           className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-gray-900 ${
-                            onlineUsers.includes(student._id) ? "bg-emerald-500" : "bg-gray-400"
+                            onlineUsers.includes(String(student._id)) ? "bg-emerald-500" : "bg-gray-400"
                           }`}
                         />
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <h4 className="font-semibold text-xs text-gray-900 dark:text-white truncate">
+                        <h4 className="font-semibold text-xs text-gray-900 dark:text-white group-hover/user:text-indigo-600 dark:group-hover/user:text-indigo-400 transition-colors truncate">
                           {student.name}
                         </h4>
                         <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
-                          {student.major || `@${student.username}`}
+                          {student.major || `@${student.username || "student"}`}
                         </p>
                       </div>
                     </div>
@@ -501,7 +553,7 @@ export default function CommunityPage() {
                       <button
                         type="button"
                         onClick={() => handleConnect(student._id)}
-                        className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 py-1.5 text-[10px] font-semibold transition border border-indigo-200/40"
+                        className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 py-1.5 text-[10px] font-semibold transition border border-indigo-200/40 cursor-pointer"
                       >
                         <UserPlus size={11} />
                         <span>+ Connect</span>
@@ -510,7 +562,7 @@ export default function CommunityPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedChatUser(student)}
-                        className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 py-1.5 text-[10px] font-medium transition"
+                        className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 py-1.5 text-[10px] font-medium transition cursor-pointer"
                       >
                         <MessageSquare size={11} />
                         <span>✉ Message</span>
@@ -519,7 +571,7 @@ export default function CommunityPage() {
                       <button
                         type="button"
                         onClick={() => handleEndorse(student)}
-                        className="flex items-center justify-center p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                        className="flex items-center justify-center p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
                         title="Endorse"
                       >
                         <Award size={11} />
@@ -540,7 +592,7 @@ export default function CommunityPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
             onClick={() => setSelectedChatUser(null)}
           >
             <motion.div
@@ -548,11 +600,12 @@ export default function CommunityPage() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-2xl h-[600px] shadow-2xl flex flex-col overflow-hidden relative"
+              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl w-full max-w-2xl h-[600px] shadow-2xl flex flex-col overflow-hidden relative"
             >
               <button
                 onClick={() => setSelectedChatUser(null)}
-                className="absolute top-4 right-4 z-10 p-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white transition"
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-900 dark:hover:text-white transition cursor-pointer"
+                title="Close Chat"
               >
                 <X size={16} />
               </button>
@@ -568,6 +621,19 @@ export default function CommunityPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── USER PROFILE MODAL ── */}
+      <UserProfileModal
+        user={selectedProfileUser}
+        currentUser={currentUser}
+        isOpen={Boolean(selectedProfileUser)}
+        onClose={() => setSelectedProfileUser(null)}
+        onConnect={handleConnect}
+        onOpenChat={setSelectedChatUser}
+        isConnected={connectionIds.has(String(selectedProfileUser?._id || selectedProfileUser?.id))}
+        isPending={pendingIds.has(String(selectedProfileUser?._id || selectedProfileUser?.id))}
+        isOnline={onlineUsers.includes(String(selectedProfileUser?._id || selectedProfileUser?.id))}
+      />
     </div>
   );
 }

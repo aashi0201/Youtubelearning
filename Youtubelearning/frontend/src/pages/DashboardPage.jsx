@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowRight,
@@ -529,7 +529,11 @@ export default function DashboardPage() {
           className="flex flex-wrap items-center justify-between gap-4"
         >
           <div className="flex items-center gap-4">
-            <div className="relative shrink-0">
+            <Link
+              to="/settings"
+              className="relative shrink-0 group cursor-pointer"
+              title="Click to manage your profile & photo"
+            >
               <img
                 src={
                   userData?.avatar ||
@@ -537,11 +541,11 @@ export default function DashboardPage() {
                     userData?.username || "learner"
                   }`
                 }
-                className="h-12 w-12 rounded-2xl border border-black/10 dark:border-white/10 shadow-xs object-cover"
+                className="h-12 w-12 rounded-2xl border border-black/10 dark:border-white/10 shadow-xs object-cover group-hover:ring-2 group-hover:ring-indigo-500 group-hover:scale-105 transition-all"
                 alt="User Avatar"
               />
               <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-900" />
-            </div>
+            </Link>
 
             <div>
               <h1 className="text-xl font-bold md:text-2xl tracking-tight text-gray-900 dark:text-white">

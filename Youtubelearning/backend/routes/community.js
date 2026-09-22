@@ -20,15 +20,34 @@ router.get("/users", auth, async (req, res) => {
       ];
     }
 
-    let selectFields = "name username avatar bio stats level";
+    let selectFields = "name username avatar bio stats level skills leetcode codeforces codechef tuf github location schoolCompany website socialLinks";
     
     const users = await User.find(query)
       .select(selectFields)
       .lean();
 
+    // Calculate real accepted connection count for each user
+    const acceptedConnections = await Connection.find({ status: "accepted" }).lean();
+    const countMap = {};
+    for (const conn of acceptedConnections) {
+      const s = String(conn.sender);
+      const r = String(conn.receiver);
+      countMap[s] = (countMap[s] || 0) + 1;
+      countMap[r] = (countMap[r] || 0) + 1;
+    }
+
+    const enrichedUsers = users.map((u) => ({
+      ...u,
+      connectionsCount: countMap[String(u._id)] || 0,
+      stats: {
+        ...(u.stats || {}),
+        connectionsCount: countMap[String(u._id)] || 0,
+      },
+    }));
+
     res.json({
       success: true,
-      users
+      users: enrichedUsers,
     });
   } catch (err) {
     console.error("Fetch users error:", err);
@@ -186,11 +205,30 @@ router.get("/connections", auth, async (req, res) => {
         { sender: userId, status: "accepted" },
         { receiver: userId, status: "accepted" },
       ],
-    }).populate("sender receiver", "name username avatar bio stats");
+    }).populate("sender receiver", "name username avatar bio stats level skills github leetcode codeforces");
 
-    const users = connections.map(c => {
-      const other = c.sender._id.toString() === userId.toString() ? c.receiver : c.sender;
-      return { ...other.toObject(), connectionId: c._id };
+    const acceptedConnections = await Connection.find({ status: "accepted" }).lean();
+    const countMap = {};
+    for (const conn of acceptedConnections) {
+      const s = String(conn.sender);
+      const r = String(conn.receiver);
+      countMap[s] = (countMap[s] || 0) + 1;
+      countMap[r] = (countMap[r] || 0) + 1;
+    }
+
+    const users = connections.map((c) => {
+      const other = String(c.sender._id) === String(userId) ? c.receiver : c.sender;
+      const otherObj = other?.toObject ? other.toObject() : other || {};
+      const cCount = countMap[String(otherObj._id)] || 0;
+      return {
+        ...otherObj,
+        user: {
+          ...otherObj,
+          connectionsCount: cCount,
+        },
+        connectionsCount: cCount,
+        connectionId: c._id,
+      };
     });
 
     res.json(users);
@@ -210,9 +248,19 @@ router.get("/messages/:userId", auth, async (req, res) => {
         { sender: currentUserId, receiver: otherUserId },
         { sender: otherUserId, receiver: currentUserId },
       ],
-    }).sort({ createdAt: 1 });
+    })
+      .sort({ createdAt: 1 })
+      .lean();
 
-    res.json(messages);
+    const formattedMessages = messages.map((m) => ({
+      ...m,
+      sender: String(m.sender),
+      receiver: String(m.receiver),
+      senderId: String(m.sender),
+      receiverId: String(m.receiver),
+    }));
+
+    res.json(formattedMessages);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -224,6 +272,10 @@ router.post("/messages", auth, async (req, res) => {
     const senderId = req.user.userId || req.user.id;
     const { receiverId, message } = req.body;
 
+    if (!receiverId || !message) {
+      return res.status(400).json({ error: "receiverId and message are required" });
+    }
+
     const newMessage = new Message({
       sender: senderId,
       receiver: receiverId,
@@ -231,7 +283,25 @@ router.post("/messages", auth, async (req, res) => {
     });
 
     await newMessage.save();
-    res.json(newMessage);
+
+    const messageData = {
+      ...newMessage.toObject(),
+      sender: String(senderId),
+      receiver: String(receiverId),
+      senderId: String(senderId),
+      receiverId: String(receiverId),
+    };
+
+    const io = req.app.get("io");
+    const onlineUsers = req.app.get("onlineUsers");
+    if (io && onlineUsers) {
+      const receiverSocketId = onlineUsers.get(String(receiverId));
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit("newMessage", messageData);
+      }
+    }
+
+    res.json(messageData);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

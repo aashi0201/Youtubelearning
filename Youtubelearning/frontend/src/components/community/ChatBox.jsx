@@ -32,69 +32,70 @@ export default function ChatBox({ selectedUser, currentUser, socket, messages, o
     );
   }
 
+  const myId = String(currentUser?._id || currentUser?.id || "");
+
   return (
-    <div className="h-full flex flex-col glass premium-border rounded-[2rem] overflow-hidden">
+    <div className="h-full flex flex-col bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-xl text-gray-900 dark:text-white">
       {/* Header */}
-      <header className="p-4 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+      <header className="p-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/40 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative">
             <img 
-              src={selectedUser.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedUser.username}`} 
-              className="w-10 h-10 rounded-xl" 
-              alt="" 
+              src={selectedUser.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedUser.username || "sf"}`} 
+              className="w-10 h-10 rounded-xl object-cover ring-1 ring-gray-200 dark:ring-gray-700" 
+              alt={selectedUser.name} 
             />
-            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-900 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-900 shadow-xs"></div>
           </div>
           <div>
-            <h4 className="text-sm font-bold text-white">{selectedUser.name}</h4>
-            <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Active Now</p>
+            <h4 className="text-sm font-bold">{selectedUser.name}</h4>
+            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wider">Online</p>
           </div>
         </div>
-        <button className="p-2 hover:bg-white/5 rounded-lg transition text-muted">
-          <MoreVertical size={20} />
-        </button>
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/30 dark:bg-gray-950/20">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center opacity-30 gap-4">
-             <div className="p-4 rounded-full bg-white/5">
-                <MessageCircle size={32} />
+          <div className="h-full flex flex-col items-center justify-center opacity-40 gap-3">
+             <div className="p-3.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500">
+                <MessageCircle size={28} />
              </div>
-             <p className="text-sm italic">No messages yet. Start the conversation!</p>
+             <p className="text-xs font-medium">No messages yet. Say hi to {selectedUser.name}!</p>
           </div>
         ) : (
-          messages.map((msg, idx) => (
-            <MessageBubble 
-              key={msg._id || idx} 
-              message={msg} 
-              isMine={msg.sender === currentUser?.id || msg.senderId === currentUser?.id} 
-            />
-          ))
+          messages.map((msg, idx) => {
+            const senderId = String(msg.sender?._id || msg.sender || msg.senderId || "");
+            const isMine = Boolean(myId && senderId && myId === senderId);
+            return (
+              <MessageBubble 
+                key={msg._id || idx} 
+                message={msg} 
+                isMine={isMine} 
+              />
+            );
+          })
         )}
         <div ref={scrollRef} />
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSend} className="p-4 border-t border-white/5 bg-white/[0.02]">
-        <div className="relative flex items-center gap-3">
-          <button type="button" className="p-2.5 text-muted hover:text-white transition hover:bg-white/5 rounded-xl">
-             <Image size={20} />
-          </button>
+      <form onSubmit={handleSend} className="p-3.5 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+        <div className="relative flex items-center gap-2">
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder={`Message ${selectedUser.name}...`}
-            className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white placeholder:text-muted/50 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all font-medium"
+            className="flex-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition font-medium"
           />
           <button 
             type="submit"
             disabled={!inputText.trim()}
-            className="p-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:bg-blue-600/50 text-white rounded-xl transition shadow-lg shadow-blue-600/20"
+            className="p-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl transition shadow-md shadow-indigo-600/20 cursor-pointer"
+            title="Send message"
           >
-            <Send size={18} />
+            <Send size={16} />
           </button>
         </div>
       </form>

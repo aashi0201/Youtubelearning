@@ -7,12 +7,13 @@ export default function UserCard({
   onConnect,
   onOpenChat,
   onEndorse,
+  onViewProfile,
   isOnline,
   isConnected,
   isPending,
 }) {
-  const titleText = student.bio || student.major || `Computer Science Student • @${student.username}`;
-  const connectionsCount = student.stats?.connectionsCount || Math.floor(Math.abs(crc32(student._id || "1")) % 300) + 50;
+  const titleText = student.bio || student.major || `Computer Science Student • @${student.username || "student"}`;
+  const connectionsCount = student.connectionsCount ?? student.stats?.connectionsCount ?? 0;
 
   return (
     <motion.div
@@ -23,10 +24,15 @@ export default function UserCard({
     >
       {/* Identity & Avatar */}
       <div className="flex items-center gap-3.5 min-w-[240px] flex-1">
-        <div className="relative shrink-0">
+        <button
+          type="button"
+          onClick={() => onViewProfile?.(student)}
+          className="relative shrink-0 text-left focus:outline-hidden group/avatar cursor-pointer"
+          title={`View ${student.name}'s profile`}
+        >
           <img
-            src={student.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${student.username}`}
-            className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100 dark:ring-gray-800 shadow-xs"
+            src={student.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${student.username || "sf"}`}
+            className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100 dark:ring-gray-800 shadow-xs group-hover/avatar:ring-indigo-500 group-hover/avatar:scale-105 transition-all"
             alt={student.name}
           />
           <span
@@ -35,13 +41,17 @@ export default function UserCard({
             }`}
             title={isOnline ? "Online" : "Offline"}
           />
-        </div>
+        </button>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-sm md:text-base text-gray-900 dark:text-white truncate">
+            <button
+              type="button"
+              onClick={() => onViewProfile?.(student)}
+              className="font-semibold text-sm md:text-base text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors truncate text-left cursor-pointer"
+            >
               {student.name}
-            </h3>
+            </button>
             {student.level === 2 ? (
               <span className="px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-black uppercase tracking-wider border border-amber-500/20 shrink-0">
                 Pro 🔥
@@ -110,14 +120,4 @@ export default function UserCard({
       </div>
     </motion.div>
   );
-}
-
-// Simple deterministic hash helper for connection count demo fallback
-function crc32(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
 }
