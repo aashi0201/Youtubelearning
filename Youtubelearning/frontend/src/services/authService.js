@@ -25,6 +25,27 @@ export async function resetPassword(token, password) {
   return data;
 }
 
+// Email OTP APIs
+export async function sendOtp(email, purpose = "login") {
+  const { data } = await api.post("/auth/send-otp", { email, purpose });
+  return data;
+}
+
+export async function verifyOtpLogin(email, otp) {
+  const { data } = await api.post("/auth/verify-otp-login", { email, otp });
+  return data;
+}
+
+export async function forgotPasswordOtp(email) {
+  const { data } = await api.post("/auth/forgot-password-otp", { email });
+  return data;
+}
+
+export async function resetPasswordOtp(email, otp, password) {
+  const { data } = await api.post("/auth/reset-password-otp", { email, otp, password });
+  return data;
+}
+
 export async function googleLoginUser(credential) {
   const { data } = await api.post("/auth/google", { credential });
   return data;
@@ -32,6 +53,22 @@ export async function googleLoginUser(credential) {
 
 export async function getMe() {
   const { data } = await api.get("/auth/me");
+  return data;
+}
+
+export async function updateUserProfile(payload) {
+  const { data } = await api.put("/auth/profile", payload);
+  return data;
+}
+
+export async function uploadAvatar(avatar) {
+  const { data } = await api.post("/auth/upload-avatar", { avatar });
+  return data;
+}
+
+export async function checkUsernameAvailability(username, currentUserId) {
+  const params = currentUserId ? { currentUserId } : {};
+  const { data } = await api.get(`/auth/check-username/${encodeURIComponent(username)}`, { params });
   return data;
 }
 

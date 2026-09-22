@@ -13,12 +13,20 @@ setInterval(cleanupBuckets, 60 * 1000).unref();
 
 function createRateLimiter(options = {}) {
   const windowMs = options.windowMs || 60 * 1000;
-  const max = options.max || 60;
+  const max = options.max || 300;
   const keyGenerator =
     options.keyGenerator ||
     ((req) => `${req.ip}:${req.baseUrl || ""}:${req.path || ""}`);
 
   return function rateLimiter(req, res, next) {
+    if (
+      process.env.DISABLE_RATE_LIMIT === "true" ||
+      process.env.NODE_ENV === "test" ||
+      (process.env.NODE_ENV || "development") === "development"
+    ) {
+      return next();
+    }
+
     const key = keyGenerator(req);
     const now = Date.now();
 

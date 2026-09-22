@@ -9,6 +9,7 @@ const Bookmark = require("../models/Bookmark");
 const Progress = require("../models/Progress");
 const AIInteraction = require("../models/AIInteraction");
 const StudyGoal = require("../models/StudyGoal");
+const UserActivity = require("../models/UserActivity");
 
 const router = express.Router();
 
@@ -24,6 +25,8 @@ router.get("/dashboard", auth, async (req, res) => {
   try {
     const userId = new mongoose.Types.ObjectId(getUserId(req));
 
+    const todayStr = new Date().toISOString().split("T")[0];
+
     const [
       totalVideos,
       totalNotes,
@@ -34,7 +37,8 @@ router.get("/dashboard", auth, async (req, res) => {
       progressItems,
       recentNotes,
       recentBookmarks,
-      recentAI
+      recentAI,
+      todayActivity
     ] = await Promise.all([
       Video.countDocuments(),
       Note.countDocuments({ user: userId }),
@@ -54,13 +58,29 @@ router.get("/dashboard", auth, async (req, res) => {
       AIInteraction.find({ user: userId })
         .sort({ createdAt: -1 })
         .limit(10)
-        .select("_id youtubeId type input output source createdAt")
+        .select("_id youtubeId type input output source createdAt"),
+      UserActivity.findOne({ userId, date: todayStr }).select("watchTimeSec tasksCompleted")
     ]);
 
     const totalWatchTimeSec = progressItems.reduce(
       (sum, item) => sum + (item.watchTimeSec || 0),
       0
     );
+
+    // Calculate today's watch time
+    let todayWatchTimeSec = Math.max(0, Number(todayActivity?.watchTimeSec) || 0);
+    if (todayWatchTimeSec === 0) {
+      // Fallback: sum watchTimeSec of items whose last watch timestamp occurred today
+      const todayProgress = progressItems.filter((item) => {
+        const d = item.lastWatchedAt || item.updatedAt;
+        if (!d) return false;
+        return new Date(d).toISOString().split("T")[0] === todayStr;
+      });
+      todayWatchTimeSec = todayProgress.reduce(
+        (sum, item) => sum + (item.watchTimeSec || 0),
+        0
+      );
+    }
 
     const completedVideos = progressItems.filter((item) => item.completed).length;
 
@@ -86,7 +106,8 @@ router.get("/dashboard", auth, async (req, res) => {
         completedGoals,
         completedVideos,
         totalTrackedVideos: progressItems.length,
-        totalWatchTimeSec
+        totalWatchTimeSec,
+        todayWatchTimeSec
       },
       recent: {
         progress: recentProgress,

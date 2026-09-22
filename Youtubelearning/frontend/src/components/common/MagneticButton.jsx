@@ -29,9 +29,9 @@ export default function MagneticButton({
 
   const styles = {
     primary:
-      "bg-[linear-gradient(135deg,#4f8cff,#8b5cf6)] text-white shadow-[0_0_30px_rgba(79,140,255,0.24)]",
+      "bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-100 shadow-sm border border-black/10 dark:border-white/10 font-semibold",
     secondary:
-      "glass text-[var(--text)] border border-white/10",
+      "glass text-[var(--text)] border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5",
   };
 
   return (

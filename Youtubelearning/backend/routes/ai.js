@@ -33,9 +33,7 @@ const {
 
 const router = express.Router();
 
-function sanitizeVideoId(raw) {
-  return String(raw || "").trim().replace(/[^a-zA-Z0-9_-]/g, "");
-}
+const { sanitizeVideoId } = require("../utils/extractors");
 
 function getUserId(req) {
   return req.user.userId || req.user.id;
@@ -734,6 +732,9 @@ router.post("/quiz-attempt", auth, async (req, res) => {
       passed: scorePercent >= 40,
       attemptedAt: new Date(),
     });
+
+    const { recordStudyActivity } = require("../utils/streakHelper");
+    recordStudyActivity(userId).catch((e) => console.error("Auto record quiz study activity error:", e.message));
 
     return res.status(201).json({
       ok: true,

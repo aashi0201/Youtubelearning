@@ -4,11 +4,11 @@ import { AlertTriangle, RefreshCw } from "lucide-react";
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError() {
-    return { hasError: true };
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error, info) {
@@ -30,6 +30,11 @@ export default class ErrorBoundary extends Component {
           <p className="mt-2 text-sm text-muted">
             This section failed to render. Refreshing usually restores the workspace state.
           </p>
+          {this.state.error?.message ? (
+            <p className="mt-3 rounded-lg border border-rose-500/20 bg-rose-950/40 p-2 font-mono text-[11px] text-rose-300">
+              {this.state.error.message}
+            </p>
+          ) : null}
           <button
             className="mt-5 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold"
             onClick={() => window.location.reload()}

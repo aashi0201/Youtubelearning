@@ -6,9 +6,7 @@ const { getTranscript } = require("../services/transcriptService");
 
 const router = express.Router();
 
-function sanitizeVideoId(raw) {
-  return String(raw || "").trim().replace(/[^a-zA-Z0-9_-]/g, "");
-}
+const { sanitizeVideoId } = require("../utils/extractors");
 
 function shouldForceRefresh(req) {
   return (

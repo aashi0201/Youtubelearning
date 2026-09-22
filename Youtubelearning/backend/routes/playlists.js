@@ -29,17 +29,16 @@ function youtubeErrorToMessage(err) {
 // Create playlist
 router.post("/", auth, async (req, res) => {
   try {
-    const name = sanitizeText(req.body?.name);
+    const userId = req.user.userId || req.user.id;
+    let name = sanitizeText(req.body?.name);
 
     if (!name) {
-      return res.status(400).json({
-        ok: false,
-        error: "Playlist name is required"
-      });
+      const count = await Playlist.countDocuments({ user: userId });
+      name = `Custom Learning Track ${count + 1}`;
     }
 
     const playlist = await Playlist.create({
-      user: req.user.userId || req.user.id,
+      user: userId,
       name,
       videos: []
     });
@@ -159,17 +158,28 @@ router.post("/:id/videos", auth, async (req, res) => {
     const userId = req.user.userId || req.user.id;
     const playlistId = req.params.id;
 
-    const video = {
-      videoId: sanitizeVideoId(req.body?.videoId),
-      title: sanitizeText(req.body?.title),
-      thumbnail: sanitizeText(req.body?.thumbnail)
-    };
+    const videoId = sanitizeVideoId(req.body?.videoId);
+    let title = sanitizeText(req.body?.title);
+    let thumbnail = sanitizeText(req.body?.thumbnail);
 
-    if (!video.videoId || !video.title) {
+    if (!videoId) {
       return res.status(400).json({
         ok: false,
-        error: "videoId and title are required"
+        error: "videoId is required"
       });
+    }
+
+    if (!title || title === "Selected Video" || title.startsWith("Video ")) {
+      try {
+        const { getVideoMetadata } = require("../services/youtubeService");
+        const meta = await getVideoMetadata(videoId);
+        if (meta?.title) title = meta.title;
+        if (meta?.thumbnails?.high || meta?.thumbnails?.medium) {
+          thumbnail = meta.thumbnails.high || meta.thumbnails.medium || thumbnail;
+        }
+      } catch (err) {
+        if (!title) title = `YouTube Video ${videoId}`;
+      }
     }
 
     const playlist = await Playlist.findOne({ _id: playlistId, user: userId });
@@ -181,12 +191,21 @@ router.post("/:id/videos", auth, async (req, res) => {
       });
     }
 
-    const alreadyExists = playlist.videos.some(
-      (v) => v.videoId === video.videoId
+    const existingIndex = playlist.videos.findIndex(
+      (v) => v.videoId === videoId
     );
 
-    if (!alreadyExists) {
-      playlist.videos.push(video);
+    if (existingIndex === -1) {
+      playlist.videos.push({ videoId, title, thumbnail });
+      await playlist.save();
+    } else if (
+      playlist.videos[existingIndex].title.startsWith("Video ") ||
+      playlist.videos[existingIndex].title === "Selected Video"
+    ) {
+      playlist.videos[existingIndex].title = title;
+      if (thumbnail) {
+        playlist.videos[existingIndex].thumbnail = thumbnail;
+      }
       await playlist.save();
     }
 
@@ -242,7 +261,7 @@ router.post("/import", auth, async (req, res) => {
   try {
     const userId = req.user.userId || req.user.id;
     const playlistId = sanitizePlaylistId(req.body?.playlistId);
-    const name = sanitizeText(req.body?.name) || "Imported Playlist";
+    let name = sanitizeText(req.body?.name);
 
     if (!playlistId) {
       return res.status(400).json({
@@ -256,6 +275,29 @@ router.post("/import", auth, async (req, res) => {
         ok: false,
         error: "YOUTUBE_API_KEY missing in .env"
       });
+    }
+
+    // Auto-fetch real YouTube playlist title if name not provided by user
+    if (!name || name === "Imported Playlist" || name.startsWith("Playlist ")) {
+      try {
+        const infoRes = await axios.get(
+          "https://www.googleapis.com/youtube/v3/playlists",
+          {
+            params: {
+              part: "snippet",
+              id: playlistId,
+              key: env.YOUTUBE_API_KEY
+            },
+            timeout: 10000
+          }
+        );
+        const fetchedName = infoRes.data?.items?.[0]?.snippet?.title;
+        if (fetchedName) {
+          name = fetchedName;
+        }
+      } catch (err) {
+        console.warn("Could not fetch YouTube playlist title:", err.message);
+      }
     }
 
     let nextPageToken = "";
@@ -307,6 +349,19 @@ router.post("/import", auth, async (req, res) => {
     }
 
     const uniqueVideos = Array.from(uniqueVideosMap.values());
+
+    // If name is still empty or generic, derive from first video title
+    if ((!name || name === "Imported Playlist") && uniqueVideos.length > 0) {
+      const firstTitle = uniqueVideos[0].title;
+      if (firstTitle && !firstTitle.startsWith("Video ") && firstTitle !== "Selected Video") {
+        const cleanTitle = firstTitle.split(/[-|:|#]/)[0].trim();
+        name = cleanTitle ? `${cleanTitle} Track` : firstTitle;
+      }
+    }
+
+    if (!name) {
+      name = `YouTube Learning Track (${playlistId.slice(0, 6)})`;
+    }
 
     const playlist = await Playlist.create({
       user: userId,

@@ -1,13 +1,7 @@
 const axios = require("axios");
 const env = require("../config/env");
 
-function sanitizeVideoId(raw) {
-  return String(raw || "").trim().replace(/[^a-zA-Z0-9_-]/g, "");
-}
-
-function sanitizePlaylistId(raw) {
-  return String(raw || "").trim().replace(/[^a-zA-Z0-9_-]/g, "");
-}
+const { sanitizeVideoId, sanitizePlaylistId } = require("../utils/extractors");
 
 function parseISODurationToSeconds(iso = "") {
   const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);

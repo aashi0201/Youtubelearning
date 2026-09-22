@@ -8,11 +8,13 @@ export default function Button({
 }) {
   const styles = {
     primary:
-      "bg-[linear-gradient(110deg,var(--brand),var(--brand-2))] text-white shadow-[0_4px_14px_rgba(59,130,246,0.2)] border border-white/10 hover:shadow-[0_6px_20px_rgba(59,130,246,0.3)]",
+      "bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-100 shadow-sm border border-black/10 dark:border-white/10 active:scale-[0.98]",
     secondary:
-      "bg-transparent border border-white/10 text-[var(--text)] hover:bg-white/5",
+      "bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[var(--text)] hover:bg-black/10 dark:hover:bg-white/10",
     danger:
       "bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20",
+    accent:
+      "bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm border border-indigo-400/20",
   };
 
   return (

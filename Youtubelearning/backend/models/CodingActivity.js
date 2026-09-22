@@ -28,5 +28,7 @@ const codingActivitySchema = new mongoose.Schema({
 
 // Ensure unique entry per user per platform per day
 codingActivitySchema.index({ user: 1, date: 1, platform: 1 }, { unique: true });
+// Optimize reverse-chronological streak calculation queries
+codingActivitySchema.index({ user: 1, date: -1 });
 
 module.exports = mongoose.model("CodingActivity", codingActivitySchema);

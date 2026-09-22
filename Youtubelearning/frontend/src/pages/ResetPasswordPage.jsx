@@ -77,7 +77,7 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-2xl bg-[linear-gradient(135deg,#4f8cff,#8b5cf6)] px-4 py-3 text-white"
+            className="w-full rounded-2xl bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 text-sm font-semibold transition shadow-xs disabled:opacity-60"
           >
             {loading ? "Updating..." : "Reset password"}
           </button>

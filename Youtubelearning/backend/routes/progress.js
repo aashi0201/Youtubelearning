@@ -2,6 +2,7 @@ const express = require("express");
 const auth = require("../middleware/auth");
 const Progress = require("../models/Progress");
 const Playlist = require("../models/Playlist");
+const UserActivity = require("../models/UserActivity");
 
 const router = express.Router();
 
@@ -57,8 +58,19 @@ router.post("/update", auth, async (req, res) => {
         ? progress.watchTimeSec / progress.durationSec >= 0.9
         : progress.completed;
     progress.lastWatchedAt = new Date();
-
     await progress.save();
+
+    const { recordStudyActivity } = require("../utils/streakHelper");
+    recordStudyActivity(userId).catch((e) => console.error("Auto record study activity error:", e.message));
+
+    if (safeDelta > 0) {
+      const todayStr = new Date().toISOString().split("T")[0];
+      UserActivity.findOneAndUpdate(
+        { userId, date: todayStr },
+        { $inc: { watchTimeSec: safeDelta } },
+        { upsert: true, new: true }
+      ).catch((e) => console.error("Auto record daily watch time error:", e.message));
+    }
 
     if (safeDuration > 0) {
       await Playlist.updateMany(

@@ -16,14 +16,19 @@ export default function Navbar() {
       className="sticky top-0 z-30 border-b border-white/10 bg-[color:var(--bg)]/70 backdrop-blur-xl"
     >
       <div className="flex items-center justify-between gap-4 px-4 py-4 md:px-6">
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted">
-            Interactive learning suite
-          </p>
-          <h1 className="truncate text-lg font-bold md:text-xl">
-            Premium SaaS Workspace
-          </h1>
-        </div>
+        <Link to="/" className="min-w-0 flex items-center gap-2.5 group cursor-pointer" title="Go to Starting Screen">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-900 text-white dark:bg-white dark:text-gray-950 shadow-sm border border-black/10 dark:border-white/10 group-hover:scale-105 transition">
+            <Sparkles size={17} />
+          </div>
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted">
+              Interactive Learning Suite
+            </p>
+            <h1 className="truncate text-sm font-extrabold md:text-base text-gray-900 dark:text-white">
+              EduPulse Workspace
+            </h1>
+          </div>
+        </Link>
 
         <div className="flex items-center gap-3">
           <div className="glass hidden items-center gap-2 rounded-2xl border border-white/10 px-3 py-2 lg:flex">
@@ -47,7 +52,7 @@ export default function Navbar() {
             {isLoggedIn ? (
               <Link
                 to="/dashboard"
-                className="flex items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#4f8cff,#8b5cf6)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_24px_rgba(79,140,255,0.22)] transition hover:scale-[1.02]"
+                className="flex items-center gap-2 rounded-xl bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-100 px-4 py-2 text-sm font-semibold shadow-sm border border-black/10 dark:border-white/10 transition active:scale-[0.98]"
               >
                 <LayoutDashboard size={16} />
                 Dashboard
@@ -56,7 +61,7 @@ export default function Navbar() {
               <>
                 <Link
                   to="/login"
-                  className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-[var(--text)] transition hover:border-white/20 hover:bg-white/10"
+                  className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-4 py-2 text-sm font-medium text-[var(--text)] transition hover:border-black/20 dark:hover:border-white/20 hover:bg-black/10 dark:hover:bg-white/10"
                 >
                   <LogIn size={16} />
                   Login
@@ -64,7 +69,7 @@ export default function Navbar() {
 
                 <Link
                   to="/register"
-                  className="flex items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#4f8cff,#8b5cf6)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_24px_rgba(79,140,255,0.22)] transition hover:scale-[1.02]"
+                  className="flex items-center gap-2 rounded-xl bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-100 px-4 py-2 text-sm font-semibold shadow-sm border border-black/10 dark:border-white/10 transition active:scale-[0.98]"
                 >
                   <Sparkles size={16} />
                   Get Started
@@ -80,7 +85,7 @@ export default function Navbar() {
           {isLoggedIn ? (
             <Link
               to="/dashboard"
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#4f8cff,#8b5cf6)] px-4 py-3 text-sm font-semibold text-white"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-100 px-4 py-2.5 text-sm font-semibold shadow-sm"
             >
               <LayoutDashboard size={16} />
               Dashboard
@@ -89,7 +94,7 @@ export default function Navbar() {
             <>
               <Link
                 to="/login"
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-[var(--text)]"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-4 py-2.5 text-sm font-medium text-[var(--text)]"
               >
                 <LogIn size={16} />
                 Login
@@ -97,7 +102,7 @@ export default function Navbar() {
 
               <Link
                 to="/register"
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#4f8cff,#8b5cf6)] px-4 py-3 text-sm font-semibold text-white"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-100 px-4 py-2.5 text-sm font-semibold shadow-sm"
               >
                 <Sparkles size={16} />
                 Start

@@ -4,16 +4,20 @@ import StreakGrid from "../components/streak/StreakGrid";
 
 export default function StreakPage() {
   return (
-    <div className="py-8 px-6 max-w-7xl mx-auto space-y-8 h-[calc(100vh-120px)] overflow-y-auto scrollbar-hide">
-      <header className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto mt-6">
-         <div className="w-16 h-16 rounded-3xl bg-orange-500/10 flex items-center justify-center text-orange-400 mb-6 border border-orange-500/20 shadow-[0_0_30px_rgba(249,115,22,0.15)]">
-           <Flame size={32} className="drop-shadow-[0_0_10px_rgba(249,115,22,0.5)]" />
-         </div>
-         <h1 className="text-4xl font-black text-white tracking-tight mb-3">Learning Consistency</h1>
-         <p className="text-muted text-lg">Track your daily learning consistency, maintain your streak, and unlock premium community features! 🔥</p>
+    <div className="py-6 px-4 md:px-6 max-w-7xl mx-auto space-y-8 min-h-screen">
+      <header className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto pt-4 space-y-3">
+        <div className="w-16 h-16 rounded-2xl bg-orange-50 dark:bg-orange-950/60 text-orange-500 flex items-center justify-center border border-orange-200/80 dark:border-orange-900/40 shadow-lg shadow-orange-500/15">
+          <Flame size={32} className="fill-orange-500 text-orange-500 animate-pulse" />
+        </div>
+        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+          Learning Consistency
+        </h1>
+        <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-lg leading-relaxed">
+          Track your daily study consistency, maintain your streak momentum, and unlock milestone badges! 🔥
+        </p>
       </header>
 
-      <section className="mt-12">
+      <section>
         <StreakGrid />
       </section>
     </div>

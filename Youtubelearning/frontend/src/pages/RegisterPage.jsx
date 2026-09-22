@@ -1,30 +1,77 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
+  Check,
+  CheckCircle2,
+  ChevronDown,
   Eye,
   EyeOff,
+  Globe,
   LockKeyhole,
   Mail,
-  ShieldCheck,
+  RotateCw,
   Sparkles,
   User,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { registerUser } from "../services/authService";
+import { GoogleLogin } from "@react-oauth/google";
+import { registerUser, googleLoginUser } from "../services/authService";
 import useAuth from "../hooks/useAuth";
 import AuthShowcase from "../components/common/AuthShowcase";
+import ThemeToggle from "../components/common/ThemeToggle";
 
 function getPasswordStrength(password) {
   let score = 0;
-  if (password.length >= 8) score += 1;
-  if (/[A-Z]/.test(password)) score += 1;
-  if (/[a-z]/.test(password)) score += 1;
-  if (/[0-9]/.test(password)) score += 1;
-  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+  const hasMinLength = password.length >= 8;
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
 
-  if (score <= 2) return { label: "Weak", width: "33%", tone: "bg-rose-500" };
-  if (score <= 4) return { label: "Medium", width: "66%", tone: "bg-yellow-500" };
-  return { label: "Strong", width: "100%", tone: "bg-emerald-500" };
+  if (hasMinLength) score += 1;
+  if (hasUpper) score += 1;
+  if (hasLower) score += 1;
+  if (hasNumber) score += 1;
+  if (hasSpecial) score += 1;
+
+  let label = "Too Weak";
+  let tone = "bg-rose-500";
+  let percent = 20;
+
+  if (score <= 1) {
+    label = "Very Weak";
+    tone = "bg-rose-500";
+    percent = 20;
+  } else if (score === 2) {
+    label = "Weak";
+    tone = "bg-orange-500";
+    percent = 40;
+  } else if (score === 3) {
+    label = "Fair";
+    tone = "bg-yellow-500";
+    percent = 60;
+  } else if (score === 4) {
+    label = "Good";
+    tone = "bg-indigo-500";
+    percent = 80;
+  } else {
+    label = "Strong";
+    tone = "bg-emerald-500";
+    percent = 100;
+  }
+
+  return {
+    score,
+    label,
+    tone,
+    percent,
+    rules: {
+      hasMinLength,
+      hasUpper,
+      hasNumber,
+      hasSpecial,
+    },
+  };
 }
 
 export default function RegisterPage() {
@@ -35,12 +82,9 @@ export default function RegisterPage() {
     name: "",
     email: "",
     password: "",
-    confirmPassword: "",
-    agree: false,
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -48,41 +92,25 @@ export default function RegisterPage() {
 
   const strength = useMemo(() => getPasswordStrength(form.password), [form.password]);
 
-  const passwordsMatch =
-    form.confirmPassword.length === 0 || form.password === form.confirmPassword;
-
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   };
 
   const validateForm = () => {
-    if (
-      !form.name.trim() ||
-      !form.email.trim() ||
-      !form.password.trim() ||
-      !form.confirmPassword.trim()
-    ) {
-      return "All fields are required.";
+    if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
+      return "Please fill in all fields.";
     }
 
     if (!/^\S+@\S+\.\S+$/.test(form.email)) {
-      return "Enter a valid email address.";
+      return "Please enter a valid email address.";
     }
 
     if (form.password.length < 8) {
-      return "Password must be at least 8 characters.";
-    }
-
-    if (form.password !== form.confirmPassword) {
-      return "Passwords do not match.";
-    }
-
-    if (!form.agree) {
-      return "Please accept the terms to continue.";
+      return "Password must be at least 8 characters long.";
     }
 
     return "";
@@ -102,228 +130,247 @@ export default function RegisterPage() {
     try {
       setLoading(true);
       const data = await registerUser({
-        name: form.name,
-        email: form.email,
+        name: form.name.trim(),
+        email: form.email.trim(),
         password: form.password,
       });
       saveAuth(data.token, data.user);
-      setSuccess("Account created successfully.");
-      setTimeout(() => navigate("/dashboard"), 700);
+      setSuccess("Account created successfully! Preparing your workspace...");
+      setTimeout(() => navigate("/welcome"), 600);
     } catch (err) {
-      setError(
-        err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          "Registration failed."
-      );
+      const backendErr = err?.response?.data;
+      const message =
+        backendErr?.details
+          ? `${backendErr.error || "Registration failed"}: ${backendErr.details}`
+          : backendErr?.error ||
+            backendErr?.message ||
+            (err?.message ? `Registration error: ${err.message}` : "Registration failed. Please try again.");
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- GOOGLE SIGN UP / LOGIN ---
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      setError("");
+      setLoading(true);
+      const data = await googleLoginUser(credentialResponse.credential);
+      saveAuth(data.token, data.user);
+      navigate("/welcome");
+    } catch (err) {
+      const backendErr = err?.response?.data;
+      const message =
+        backendErr?.details
+          ? `${backendErr.error || "Google sign-up failed"}: ${backendErr.details}`
+          : backendErr?.error ||
+            backendErr?.message ||
+            (err?.message ? `Sign-up error: ${err.message}` : "Google sign-up failed. Please try again or create an account with email.");
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen px-4 py-6 md:px-6 md:py-8">
-      <div className="mx-auto grid max-w-7xl items-center gap-6 xl:min-h-[calc(100vh-3rem)] xl:grid-cols-[0.92fr_1.08fr]">
-        <motion.div
-          initial={{ opacity: 0, x: -18 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.45 }}
-          className="flex items-center justify-center"
-        >
-          <div className="glass premium-border w-full max-w-[480px] rounded-[2rem] p-7 md:p-8">
-            <div className="mb-8">
-              <div className="mb-4 inline-flex rounded-2xl bg-blue-500/10 p-3">
-                <Sparkles className="text-blue-300" />
+    <div className="min-h-screen bg-[#8b9afe]/15 dark:bg-[#070b14] px-4 py-8 md:px-8 flex items-center justify-center">
+      {/* Central Split Card matching user reference design */}
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="mx-auto grid w-full max-w-5xl rounded-[2.5rem] overflow-hidden bg-white dark:bg-[#0e1526] shadow-2xl shadow-indigo-950/10 border border-black/5 dark:border-white/10 lg:grid-cols-[1fr_1.15fr]"
+      >
+        {/* Left Panel: Binge Learning Buddy Showcase */}
+        <div className="hidden lg:block p-3">
+          <AuthShowcase
+            tagline="A Buddy for all your Binge watching."
+            subtext="Your intelligent companion for automated notes, recall flashcards, and code execution."
+          />
+        </div>
+
+        {/* Right Panel: Clean Minimalist Auth Form */}
+        <div className="flex flex-col justify-between p-7 sm:p-10 md:p-12">
+          {/* Top Bar: Language Dropdown & Theme Toggle */}
+          <div className="flex items-center justify-end gap-4 text-xs text-gray-500 dark:text-gray-400 mb-6">
+            <div className="flex items-center gap-1.5 hover:text-gray-800 dark:hover:text-gray-200 cursor-pointer select-none font-medium">
+              <span>English (UK)</span>
+              <ChevronDown size={14} className="text-gray-400" />
+            </div>
+            <ThemeToggle />
+          </div>
+
+          <div className="w-full max-w-[420px] mx-auto my-auto">
+            {/* Main Heading */}
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+              Create Account
+            </h1>
+
+            {/* Error / Success Feedback */}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 p-3 text-xs text-rose-600 dark:text-rose-400 font-medium"
+              >
+                {error}
+              </motion.div>
+            )}
+
+            {success && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 p-3 text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-2"
+              >
+                <CheckCircle2 size={15} />
+                <span>{success}</span>
+              </motion.div>
+            )}
+
+            {/* Social Sign-In Buttons */}
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Google OAuth */}
+              <div className="w-full flex justify-center items-center overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-800/80 transition-colors shadow-xs py-0.5">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setError("Google sign-up could not be completed.")}
+                  theme="outline"
+                  size="medium"
+                  shape="rectangular"
+                  text="signup_with"
+                  width="100%"
+                />
               </div>
 
-              <h1 className="text-3xl font-black tracking-[-0.03em]">
-                Create account
-              </h1>
-
-              <p className="mt-2 text-sm text-muted">
-                Start your interactive AI learning setup.
-              </p>
+              {/* Secondary Social / Demo */}
+              <button
+                type="button"
+                onClick={() => {
+                  setForm({
+                    name: "Alex Learner",
+                    email: "alex.demo@learnsphere.io",
+                    password: "Password@123",
+                    confirmPassword: "Password@123",
+                    agree: true,
+                  });
+                }}
+                className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-800/80 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 transition-colors shadow-xs"
+              >
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1877F2] text-white">
+                  <span className="font-bold text-[11px]">f</span>
+                </div>
+                <span>Auto-Fill Demo</span>
+              </button>
             </div>
 
+            {/* Subtle Minimalist Divider */}
+            <div className="my-6 flex items-center justify-center">
+              <span className="text-xs font-bold tracking-widest text-gray-400 uppercase select-none">
+                — OR —
+              </span>
+            </div>
+
+            {/* Registration Form with Minimalist Underline Inputs */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium">Name</label>
-                <div className="glass flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 transition focus-within:border-blue-400/30 focus-within:shadow-[0_0_0_4px_rgba(59,130,246,0.08)]">
-                  <User size={18} className="text-muted" />
-                  <input
-                    name="name"
-                    type="text"
-                    value={form.name}
-                    onChange={handleChange}
-                    placeholder="Enter your name"
-                    className="w-full bg-transparent outline-none placeholder:text-[var(--muted-2)]"
-                  />
-                </div>
+              {/* Full Name */}
+              <div className="relative">
+                <input
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  placeholder="Full Name"
+                  className="w-full bg-transparent border-b border-gray-200 dark:border-gray-700 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8090fd] focus:outline-none transition-colors"
+                />
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">Email</label>
-                <div className="glass flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 transition focus-within:border-blue-400/30 focus-within:shadow-[0_0_0_4px_rgba(59,130,246,0.08)]">
-                  <Mail size={18} className="text-muted" />
-                  <input
-                    name="email"
-                    type="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    placeholder="Enter your email"
-                    className="w-full bg-transparent outline-none placeholder:text-[var(--muted-2)]"
-                  />
-                </div>
+              {/* Email Address */}
+              <div className="relative">
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="Email Address"
+                  className="w-full bg-transparent border-b border-gray-200 dark:border-gray-700 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8090fd] focus:outline-none transition-colors"
+                />
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">Password</label>
-                <div className="glass flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 transition focus-within:border-blue-400/30 focus-within:shadow-[0_0_0_4px_rgba(59,130,246,0.08)]">
-                  <LockKeyhole size={18} className="text-muted" />
-                  <input
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    value={form.password}
-                    onChange={handleChange}
-                    onKeyUp={(e) => setCapsLock(e.getModifierState("CapsLock"))}
-                    placeholder="Create a password"
-                    className="w-full bg-transparent outline-none placeholder:text-[var(--muted-2)]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="text-muted transition hover:text-[var(--text)]"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
+              {/* Password */}
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  onKeyUp={(e) => setCapsLock(e.getModifierState("CapsLock"))}
+                  placeholder="Password"
+                  className="w-full bg-transparent border-b border-gray-200 dark:border-gray-700 py-3 pr-10 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8090fd] focus:outline-none transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-1 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
 
-                <div className="mt-3">
-                  <div className="h-2 overflow-hidden rounded-full bg-white/10">
+              {/* Password Strength Indicator */}
+              {form.password.length > 0 && (
+                <div className="pt-1">
+                  <div className="flex items-center justify-between text-[11px] text-gray-500 mb-1">
+                    <span>Password Strength:</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">{strength.label}</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                     <div
-                      className={`h-2 rounded-full ${strength.tone}`}
-                      style={{ width: strength.width }}
+                      className={`h-full transition-all duration-300 ${strength.tone}`}
+                      style={{ width: `${strength.percent}%` }}
                     />
                   </div>
-                  <div className="mt-2 flex items-center justify-between text-xs">
-                    <span className="text-muted">Password strength</span>
-                    <span className="text-blue-300">{strength.label}</span>
-                  </div>
                 </div>
+              )}
 
-                {capsLock ? (
-                  <p className="mt-2 text-xs text-yellow-300">Caps Lock is on.</p>
-                ) : null}
-              </div>
+              {/* CapsLock Warning */}
+              {capsLock && (
+                <p className="text-[11px] text-amber-500 font-medium">
+                  Caps Lock is ON
+                </p>
+              )}
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Confirm Password
-                </label>
-                <div
-                  className={`glass flex items-center gap-3 rounded-2xl border px-4 py-3 transition focus-within:shadow-[0_0_0_4px_rgba(59,130,246,0.08)] ${
-                    passwordsMatch
-                      ? "border-white/10 focus-within:border-blue-400/30"
-                      : "border-rose-500/30"
-                  }`}
-                >
-                  <LockKeyhole size={18} className="text-muted" />
-                  <input
-                    name="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={form.confirmPassword}
-                    onChange={handleChange}
-                    placeholder="Confirm your password"
-                    className="w-full bg-transparent outline-none placeholder:text-[var(--muted-2)]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword((prev) => !prev)}
-                    className="text-muted transition hover:text-[var(--text)]"
-                  >
-                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-
-                {form.confirmPassword && !passwordsMatch ? (
-                  <p className="mt-2 text-xs text-rose-300">
-                    Passwords do not match.
-                  </p>
-                ) : form.confirmPassword && passwordsMatch ? (
-                  <p className="mt-2 text-xs text-emerald-300">
-                    Passwords match.
-                  </p>
-                ) : null}
-              </div>
-
-              <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-muted">
-                <input
-                  type="checkbox"
-                  name="agree"
-                  checked={form.agree}
-                  onChange={handleChange}
-                  className="mt-1"
-                />
-                <span>
-                  I agree to create an account and save my learning activity and quiz history.
-                </span>
-              </label>
-
-              {error ? (
-                <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
-                  {error}
-                </div>
-              ) : null}
-
-              {success ? (
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
-                  {success}
-                </div>
-              ) : null}
-
-              <motion.button
-                whileHover={{ y: -2, scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
+              {/* Primary Action Button */}
+              <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-2xl bg-[linear-gradient(135deg,#4f8cff,#8b5cf6)] px-5 py-3.5 text-sm font-semibold text-white shadow-[0_0_30px_rgba(79,140,255,0.3)] transition disabled:opacity-70"
+                className="mt-6 w-full py-3.5 px-6 rounded-2xl bg-[#8291fa] hover:bg-[#7282f9] text-white font-bold text-sm sm:text-base shadow-lg shadow-indigo-300/40 dark:shadow-none hover:shadow-indigo-400/50 transition-all duration-200 active:scale-[0.99] disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
               >
-                {loading ? "Creating account..." : "Register"}
-              </motion.button>
-
-              <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/15 bg-emerald-500/5 px-4 py-3 text-xs text-emerald-300">
-                <ShieldCheck size={14} />
-                Session-based auth and account-linked learning flow.
-              </div>
+                {loading ? (
+                  <>
+                    <RotateCw size={18} className="animate-spin" />
+                    <span>Creating account...</span>
+                  </>
+                ) : (
+                  <span>Create Account</span>
+                )}
+              </button>
             </form>
 
-            <div className="my-6 flex items-center gap-4">
-              <div className="h-px flex-1 bg-white/10" />
-              <span className="text-xs uppercase tracking-[0.18em] text-muted">
-                Continue
-              </span>
-              <div className="h-px flex-1 bg-white/10" />
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button className="glass rounded-2xl border border-white/10 px-4 py-3 text-sm font-medium transition hover:border-white/20 hover:bg-white/10">
-                Google
-              </button>
-              <button className="glass rounded-2xl border border-white/10 px-4 py-3 text-sm font-medium transition hover:border-white/20 hover:bg-white/10">
-                Apple
-              </button>
-            </div>
-
-            <div className="mt-6 flex items-center justify-between text-sm">
-              <span className="text-muted">Already registered?</span>
-              <Link to="/login" className="text-blue-300 hover:text-blue-200">
-                Login here
+            {/* Bottom Footer Switcher */}
+            <div className="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="font-bold text-[#8090fd] hover:text-[#6e80fa] hover:underline"
+              >
+                Log In
               </Link>
             </div>
           </div>
-        </motion.div>
-
-        <AuthShowcase />
-      </div>
+        </div>
+      </motion.div>
     </div>
   );
 }

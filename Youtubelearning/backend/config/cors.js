@@ -10,7 +10,20 @@ function getAllowedOrigins() {
 function corsOrigin(origin, callback) {
   const allowedOrigins = getAllowedOrigins();
 
-  if (!origin || allowedOrigins.includes(origin)) {
+  // Allow requests with no origin (like mobile apps, curl, postman)
+  if (!origin) {
+    callback(null, true);
+    return;
+  }
+
+  // Allow explicit CORS_ORIGINS match
+  if (allowedOrigins.includes(origin)) {
+    callback(null, true);
+    return;
+  }
+
+  // Allow any localhost origin in development (e.g., http://localhost:5173, http://localhost:5174)
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
     callback(null, true);
     return;
   }

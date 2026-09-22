@@ -1,7 +1,21 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, UserCheck, UserPlus, Search, MessageSquare, Loader2, Info, Flame, Trophy } from "lucide-react";
+import {
+  Users,
+  UserCheck,
+  UserPlus,
+  Search,
+  MessageSquare,
+  Loader2,
+  Info,
+  Trophy,
+  Award,
+  CheckCircle2,
+  X,
+  Flame,
+  Sparkles,
+} from "lucide-react";
 import axios from "axios";
 import UserCard from "../components/community/UserCard";
 import ChatBox from "../components/community/ChatBox";
@@ -12,18 +26,21 @@ const API_BASE = import.meta.env.VITE_API_URL || `${BACKEND_URL}/api`;
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || BACKEND_URL;
 
 export default function CommunityPage() {
-  const [activeTab, setActiveTab] = useState("all"); 
+  const [activeTab, setActiveTab] = useState("all"); // "all" | "connections" | "leaderboard" | "requests"
   const [students, setStudents] = useState([]);
   const [connections, setConnections] = useState([]);
   const [requests, setRequests] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sidebarSearchQuery, setSidebarSearchQuery] = useState("");
   const [selectedChatUser, setSelectedChatUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [socket, setSocket] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
-  const [onlineUsers, setOnlineUsers] = useState([]); // List of user IDs
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [toastMessage, setToastMessage] = useState(null);
+
   const selectedChatUserRef = useRef(null);
 
   useEffect(() => {
@@ -40,44 +57,27 @@ export default function CommunityPage() {
     const newSocket = io(SOCKET_URL, {
       auth: { userId: id, token },
       transports: ["websocket"],
-      withCredentials: true
+      withCredentials: true,
     });
 
     setSocket(newSocket);
-    console.log("[Socket Init] Connecting to:", SOCKET_URL, "with UserID:", id);
-
-    newSocket.on("connect", () => {
-      console.log("[Socket Success] Connected with socket ID:", newSocket.id);
-    });
-
-    newSocket.on("connect_error", (err) => {
-      console.error("[Socket Error] Connection failed:", err.message);
-    });
 
     newSocket.on("onlineUsers", (userIds) => {
-      console.log("Online users updated:", userIds);
-      setOnlineUsers(userIds);
+      setOnlineUsers(userIds || []);
     });
 
     newSocket.on("newMessage", (msg) => {
-      console.log("[Socket] Incoming message for processing:", msg);
-      
       setMessages((prev) => {
         const currentChatUser = selectedChatUserRef.current;
         if (!currentChatUser) return prev;
 
-        // Normalize IDs for comparison
         const msgSender = String(msg.sender?._id || msg.sender);
         const msgReceiver = String(msg.receiver?._id || msg.receiver);
         const activeChatId = String(currentChatUser._id || currentChatUser.id);
 
-        // Does this message belong to the active conversation?
         if (msgSender === activeChatId || msgReceiver === activeChatId) {
-           console.log("[Socket] Message added to UI state");
-           return [...prev, msg];
+          return [...prev, msg];
         }
-        
-        console.log("[Socket] Message ignored (not for active chat)");
         return prev;
       });
     });
@@ -92,12 +92,6 @@ export default function CommunityPage() {
       if (data.senderId === id || data.receiverId === id) {
         fetchConnections();
         fetchRequests();
-      }
-    });
-
-    newSocket.on("connection_removed", (data) => {
-      if (data.userId1 === id || data.userId2 === id) {
-        fetchConnections();
       }
     });
 
@@ -117,13 +111,8 @@ export default function CommunityPage() {
         axios.get(`${API_BASE}/community/users`, { headers }),
         axios.get(`${API_BASE}/community/connections`, { headers }),
         axios.get(`${API_BASE}/community/requests`, { headers }),
-        axios.get(`${API_BASE}/community/leaderboard`, { headers })
+        axios.get(`${API_BASE}/community/leaderboard`, { headers }),
       ]);
-
-      console.log("[API] Fetched users response:", studentsRes.data);
-      console.log("[API] Fetched connections response:", connectionsRes.data);
-      console.log("[API] Fetched requests response:", requestsRes.data);
-      console.log("[API] Fetched leaderboard response:", leaderboardRes.data);
 
       setStudents(studentsRes.data.users || (Array.isArray(studentsRes.data) ? studentsRes.data : []));
       setConnections(Array.isArray(connectionsRes.data) ? connectionsRes.data : []);
@@ -135,7 +124,6 @@ export default function CommunityPage() {
       setLoading(false);
     }
   };
-
 
   const fetchRequests = async () => {
     try {
@@ -169,7 +157,7 @@ export default function CommunityPage() {
 
   useEffect(() => {
     if (selectedChatUser) {
-      fetchMessages(selectedChatUser._id);
+      fetchMessages(selectedChatUser._id || selectedChatUser.id);
     }
   }, [selectedChatUser]);
 
@@ -177,6 +165,7 @@ export default function CommunityPage() {
     try {
       const headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
       await axios.post(`${API_BASE}/community/send-request`, { receiverId }, { headers });
+      showToast("Connection request sent!");
       fetchInitialData();
     } catch (err) {
       console.error("Error connecting:", err);
@@ -188,6 +177,7 @@ export default function CommunityPage() {
       const headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
       if (status === "accepted") {
         await axios.post(`${API_BASE}/community/accept-request`, { connectionId }, { headers });
+        showToast("Connection accepted!");
       }
       fetchInitialData();
     } catch (err) {
@@ -199,207 +189,385 @@ export default function CommunityPage() {
     if (!selectedChatUser || !socket) return;
     try {
       socket.emit("sendMessage", {
-        receiverId: selectedChatUser._id,
-        message: content
+        receiverId: selectedChatUser._id || selectedChatUser.id,
+        message: content,
       });
     } catch (err) {
       console.error("Error sending message:", err);
     }
   };
 
-  const filteredStudents = students.filter(s => 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    s.username.toLowerCase().includes(searchQuery.toLowerCase())
+  const handleEndorse = (student) => {
+    showToast(`Endorsed ${student.name} for Learning Progress! 🏅`);
+  };
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const filteredStudents = students.filter(
+    (s) =>
+      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.username.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const connectionIds = new Set(connections.map((c) => c.user?._id || c.user?.id));
+  const pendingIds = new Set(requests.map((r) => r.sender?._id || r.sender?.id));
+
+  // Suggested friends list for sidebar
+  const suggestedFriends = students.filter(
+    (s) => !connectionIds.has(s._id) && s._id !== currentUser?.id
+  ).filter((s) =>
+    s.name.toLowerCase().includes(sidebarSearchQuery.toLowerCase()) ||
+    s.username.toLowerCase().includes(sidebarSearchQuery.toLowerCase())
   );
 
   return (
-    <div className="h-[calc(100vh-120px)] flex gap-6">
-      {/* Left Column: Explorer / Connections */}
-      <div className="w-[400px] flex flex-col gap-6">
-        <header className="space-y-4">
-          <div className="flex items-center gap-3">
-             <div className="p-2.5 rounded-xl bg-violet-500/20 text-violet-400 border border-violet-500/20 shadow-[0_0_20px_rgba(139,92,246,0.15)]">
-               <Users size={24} />
-             </div>
-             <div>
-               <h1 className="text-2xl font-bold text-white tracking-tight">Community</h1>
-               <p className="text-muted text-xs">Connect and collaborate with peers.</p>
-             </div>
-          </div>
+    <div className="min-h-[calc(100vh-80px)] bg-slate-50 dark:bg-gray-950 p-4 md:p-6 transition-colors">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Toast Alert */}
+        <AnimatePresence>
+          {toastMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="fixed top-20 right-6 z-50 bg-gray-900 text-white dark:bg-white dark:text-gray-900 px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 text-xs font-semibold"
+            >
+              <CheckCircle2 size={16} className="text-emerald-400 dark:text-emerald-600" />
+              <span>{toastMessage}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-          <div className="flex items-center gap-1 p-1 bg-white/5 rounded-2xl border border-white/10">
-            {[
-              { id: "all", label: "Discovery", icon: UserPlus },
-              { id: "connections", label: "Friends", icon: UserCheck },
-              { id: "leaderboard", label: "Leaderboard", icon: Trophy },
-              { id: "requests", label: "Requests", icon: Info }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
-                  activeTab === tab.id ? "bg-white/10 text-white shadow-sm" : "text-muted hover:text-white"
-                }`}
-              >
-                <tab.icon size={14} />
-                <span>{tab.label}</span>
-                {tab.id === "requests" && requests.length > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-red-500 text-[10px] flex items-center justify-center text-white font-bold">{requests.length}</span>
-                )}
-              </button>
-            ))}
-          </div>
-        </header>
+        {/* 2-Column Layout */}
+        <div className="grid gap-6 xl:grid-cols-[1fr_340px] items-start">
+          {/* ── LEFT COLUMN (~70% Width): MAIN DIRECTORY CONTAINER ── */}
+          <div className="bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 rounded-2xl p-5 md:p-6 shadow-xs space-y-5">
+            {/* Header & Title */}
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-100 dark:border-indigo-900/40 shadow-2xs">
+                  <Users size={20} />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
+                    Community & Peers
+                  </h1>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Connect and collaborate with fellow learners
+                  </p>
+                </div>
+              </div>
 
-        <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-          {activeTab === "all" && (
-            <>
-              <div className="relative group">
-                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-blue-500 transition-colors" />
+              {/* Sub-Navigation Tabs */}
+              <div className="flex items-center gap-1.5 bg-gray-100/80 dark:bg-gray-800/60 p-1 rounded-xl border border-gray-200/60 dark:border-gray-700/60 overflow-x-auto">
+                {[
+                  { id: "all", label: "Discovery", icon: UserPlus },
+                  { id: "connections", label: "Friends", icon: UserCheck, count: connections.length },
+                  { id: "leaderboard", label: "Leaderboard", icon: Trophy },
+                  { id: "requests", label: "Requests", icon: Info, count: requests.length },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const active = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition whitespace-nowrap ${
+                        active
+                          ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60 shadow-2xs"
+                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <Icon size={14} />
+                      <span>{tab.label}</span>
+                      {tab.count > 0 && (
+                        <span
+                          className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                            active
+                              ? "bg-indigo-200/60 text-indigo-800 dark:bg-indigo-900/80 dark:text-indigo-200"
+                              : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                          }`}
+                        >
+                          {tab.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Search Input */}
+            {activeTab === "all" && (
+              <div className="relative">
+                <Search
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+                />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search students..."
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50 transition-all font-medium"
+                  placeholder="Search students by name or username..."
+                  className="w-full bg-gray-50 dark:bg-gray-800/60 border border-gray-200/80 dark:border-gray-700/80 rounded-xl pl-10 pr-4 py-2.5 text-xs md:text-sm text-gray-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition font-medium"
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
               </div>
-              <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-hide pb-6">
+            )}
+
+            {/* ── TAB CONTENT ── */}
+            {/* 1. DISCOVERY DIRECTORY */}
+            {activeTab === "all" && (
+              <div className="divide-y divide-gray-100 dark:divide-gray-800/80 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
                 {loading ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-4">
-                    <Loader2 className="animate-spin text-blue-500" size={32} />
-                    <p className="text-muted text-sm">Finding awesome students...</p>
+                  <div className="flex flex-col items-center justify-center py-16 gap-3">
+                    <Loader2 className="animate-spin text-indigo-600 dark:text-indigo-400" size={28} />
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Loading student directory...</p>
                   </div>
                 ) : filteredStudents.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 opacity-40">
-                    <Users size={48} className="mb-4" />
-                    <p>No students found</p>
+                  <div className="flex flex-col items-center justify-center py-16 text-center text-gray-400 space-y-2">
+                    <Users size={36} className="text-gray-300 dark:text-gray-700" />
+                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">No students found</p>
+                    <p className="text-xs text-gray-400">Try adjusting your search query.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-4">
-                    {filteredStudents.map(student => (
-                      <UserCard 
-                        key={student._id} 
-                        student={student} 
-                        onConnect={handleConnect}
-                        isOnline={onlineUsers.includes(student._id)}
-                        currentUserLevel={currentUser?.level}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          {activeTab === "leaderboard" && (
-            <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-              <div className="glass premium-border rounded-2xl p-4 bg-blue-500/5 border-blue-500/10">
-                <div className="flex items-center gap-3">
-                  <Trophy className="text-yellow-500" size={20} />
-                  <div>
-                    <h3 className="text-sm font-bold text-white">Global Leaderboard</h3>
-                    <p className="text-[10px] text-muted">Ranked by overall XP</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto space-y-2 pr-2 scrollbar-hide">
-                {leaderboard.map((user, index) => (
-                  <div 
-                    key={user._id}
-                    className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${
-                      user._id === currentUser?._id 
-                      ? "bg-blue-600/10 border-blue-500/50" 
-                      : "bg-white/5 border-white/5 hover:bg-white/10"
-                    }`}
-                  >
-                    <div className="w-8 flex justify-center font-black text-lg italic text-white/20">
-                      #{index + 1}
-                    </div>
-                    <div className="relative">
-                      <img 
-                        src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
-                        className="w-10 h-10 rounded-xl" 
-                        alt="" 
-                      />
-                      {onlineUsers.includes(user._id) && (
-                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-900 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-white text-sm truncate">{user.name}</p>
-                      <p className="text-[10px] text-muted truncate">@{user.username}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-black text-blue-400">{user.stats?.xp || 0} XP</p>
-                      <div className="flex items-center justify-end gap-1">
-                        <Flame size={10} className="text-orange-400" />
-                        <span className="text-[10px] font-bold text-orange-400">{user.stats?.streakDays || 0}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeTab === "connections" && (
-             <div className="flex-1 overflow-y-auto space-y-2 pr-2 scrollbar-hide">
-                {connections.length === 0 ? (
-                  <div className="text-center py-20 opacity-40">
-                    <p>No connections yet</p>
-                  </div>
-                ) : (
-                  connections.map(user => (
-                    <motion.button
-                      key={user._id}
-                      onClick={() => setSelectedChatUser(user)}
-                      whileHover={{ scale: 1.01 }}
-                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all ${
-                        selectedChatUser?._id === user._id 
-                        ? "bg-blue-600/10 border-blue-500/50" 
-                        : "bg-white/5 border-white/5 hover:bg-white/10"
-                      }`}
-                    >
-                      <div className="relative">
-                        <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} className="w-12 h-12 rounded-xl" alt="" />
-                        {onlineUsers.includes(user._id) && (
-                          <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-900 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                        )}
-                      </div>
-                      <div className="text-left flex-1 overflow-hidden">
-                        <p className="font-bold text-white text-sm truncate">{user.name}</p>
-                        <p className="text-xs text-muted truncate">@{user.username}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                         <div className="flex items-center gap-1 text-orange-400 text-xs">
-                           <span className="font-bold">{user.stats?.streakDays || 0} 🔥</span>
-                         </div>
-                      </div>
-                    </motion.button>
+                  filteredStudents.map((student) => (
+                    <UserCard
+                      key={student._id}
+                      student={student}
+                      onConnect={handleConnect}
+                      onOpenChat={setSelectedChatUser}
+                      onEndorse={handleEndorse}
+                      isOnline={onlineUsers.includes(student._id)}
+                      isConnected={connectionIds.has(student._id)}
+                      isPending={pendingIds.has(student._id)}
+                    />
                   ))
                 )}
-             </div>
-          )}
+              </div>
+            )}
 
-          {activeTab === "requests" && (
-            <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide">
+            {/* 2. FRIENDS / CONNECTIONS */}
+            {activeTab === "connections" && (
+              <div className="divide-y divide-gray-100 dark:divide-gray-800/80 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+                {connections.length === 0 ? (
+                  <div className="text-center py-16 space-y-2">
+                    <UserCheck className="mx-auto text-gray-400" size={32} />
+                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">No connections yet</p>
+                    <p className="text-xs text-gray-500">Connect with students in the Discovery tab to build your network.</p>
+                  </div>
+                ) : (
+                  connections.map((c) => (
+                    <UserCard
+                      key={c._id}
+                      student={c.user}
+                      onConnect={handleConnect}
+                      onOpenChat={setSelectedChatUser}
+                      onEndorse={handleEndorse}
+                      isOnline={onlineUsers.includes(c.user._id)}
+                      isConnected={true}
+                    />
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* 3. LEADERBOARD */}
+            {activeTab === "leaderboard" && (
+              <div className="space-y-3">
+                <div className="p-3.5 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 flex items-center gap-3">
+                  <Trophy className="text-amber-500 shrink-0" size={20} />
+                  <div>
+                    <h3 className="font-bold text-xs text-gray-900 dark:text-white">Top Student Rankings</h3>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">Rankings based on active study streak & watch time</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {leaderboard.map((item, index) => (
+                    <div
+                      key={item._id || index}
+                      className="flex items-center justify-between p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
+                          index === 0 ? "bg-amber-400 text-gray-900" : index === 1 ? "bg-gray-300 text-gray-900" : index === 2 ? "bg-amber-700 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                        }`}>
+                          {index + 1}
+                        </span>
+                        <div>
+                          <p className="font-semibold text-xs md:text-sm text-gray-900 dark:text-white">{item.name}</p>
+                          <p className="text-[10px] text-gray-500">@{item.username}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                          <Flame size={13} /> {item.stats?.streakDays || 0}d
+                        </span>
+                        <button
+                          onClick={() => setSelectedChatUser(item)}
+                          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                        >
+                          <MessageSquare size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 4. REQUESTS */}
+            {activeTab === "requests" && (
               <RequestPanel requests={requests} onRespond={handleRespond} />
+            )}
+          </div>
+
+          {/* ── RIGHT COLUMN (~30% Width): SUGGESTED FRIENDS SIDEBAR ── */}
+          <div className="bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 rounded-2xl p-5 shadow-xs space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800">
+              <h2 className="text-xs font-bold tracking-wider uppercase text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                <Sparkles size={14} className="text-indigo-500" />
+                SUGGESTED FRIENDS
+              </h2>
+              <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 rounded-full bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 border border-indigo-200/60">
+                {suggestedFriends.length}
+              </span>
             </div>
-          )}
+
+            {/* Embedded Sidebar Search Input */}
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={sidebarSearchQuery}
+                onChange={(e) => setSidebarSearchQuery(e.target.value)}
+                placeholder="Search suggestions..."
+                className="w-full bg-slate-50 dark:bg-gray-800/60 border border-gray-200/70 dark:border-gray-700/70 rounded-xl pl-8 pr-3 py-2 text-xs text-gray-900 dark:text-white outline-none focus:border-indigo-500 transition"
+              />
+            </div>
+
+            {/* Suggested Friends Cards List */}
+            <div className="space-y-3 max-h-[640px] overflow-y-auto pr-0.5 scrollbar-none">
+              {suggestedFriends.length === 0 ? (
+                <div className="text-center py-8 text-xs text-gray-400">
+                  No friend suggestions found.
+                </div>
+              ) : (
+                suggestedFriends.slice(0, 6).map((student) => (
+                  <div
+                    key={student._id}
+                    className="bg-slate-50/80 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800/80 rounded-xl p-3.5 space-y-3 transition hover:border-indigo-200 dark:hover:border-indigo-900/60 shadow-2xs"
+                  >
+                    {/* Top Identity Row */}
+                    <div className="flex items-center gap-2.5">
+                      <div className="relative shrink-0">
+                        <img
+                          src={student.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${student.username}`}
+                          className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-800"
+                          alt={student.name}
+                        />
+                        <span
+                          className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-gray-900 ${
+                            onlineUsers.includes(student._id) ? "bg-emerald-500" : "bg-gray-400"
+                          }`}
+                        />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-semibold text-xs text-gray-900 dark:text-white truncate">
+                          {student.name}
+                        </h4>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                          {student.major || `@${student.username}`}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Compact Stacked Action Buttons */}
+                    <div className="flex items-center gap-1.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleConnect(student._id)}
+                        className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 py-1.5 text-[10px] font-semibold transition border border-indigo-200/40"
+                      >
+                        <UserPlus size={11} />
+                        <span>+ Connect</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedChatUser(student)}
+                        className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 py-1.5 text-[10px] font-medium transition"
+                      >
+                        <MessageSquare size={11} />
+                        <span>✉ Message</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleEndorse(student)}
+                        className="flex items-center justify-center p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                        title="Endorse"
+                      >
+                        <Award size={11} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Right Column: Chat Window */}
-      <div className="flex-1">
-        <ChatBox
-          selectedUser={selectedChatUser}
-          currentUser={currentUser}
-          socket={socket}
-          messages={messages}
-          onSendMessage={handleSendMessage}
-        />
-      </div>
+      {/* ── REAL-TIME CHAT MODAL / DRAWER ── */}
+      <AnimatePresence>
+        {selectedChatUser && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+            onClick={() => setSelectedChatUser(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-2xl h-[600px] shadow-2xl flex flex-col overflow-hidden relative"
+            >
+              <button
+                onClick={() => setSelectedChatUser(null)}
+                className="absolute top-4 right-4 z-10 p-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white transition"
+              >
+                <X size={16} />
+              </button>
+
+              <ChatBox
+                selectedUser={selectedChatUser}
+                currentUser={currentUser}
+                socket={socket}
+                messages={messages}
+                onSendMessage={handleSendMessage}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

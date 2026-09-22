@@ -5,25 +5,25 @@ const cards = [
   {
     icon: Sparkles,
     title: "AI Summary",
-    desc: "Long videos ko clean notes me convert karo.",
+    desc: "Convert long videos into clean study notes.",
     tone: "bg-blue-500/10 text-blue-300",
   },
   {
     icon: BrainCircuit,
     title: "Smart Revision",
-    desc: "Flashcards aur quizzes se fast retention.",
+    desc: "Fast retention with flashcards and quizzes.",
     tone: "bg-violet-500/10 text-violet-300",
   },
   {
     icon: MessageSquareMore,
     title: "AI Chat",
-    desc: "Video ke saath conversational learning.",
+    desc: "Conversational learning alongside your video.",
     tone: "bg-cyan-500/10 text-cyan-300",
   },
   {
     icon: Zap,
     title: "Focused Workflow",
-    desc: "Video, playlist, AI aur progress ek hi place par.",
+    desc: "Video, playlist, AI, and progress all in one place.",
     tone: "bg-emerald-500/10 text-emerald-300",
   },
 ];

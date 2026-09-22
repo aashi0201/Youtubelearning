@@ -9,13 +9,7 @@ const {
 
 const router = express.Router();
 
-function sanitizeVideoId(raw) {
-  return String(raw || "").trim().replace(/[^a-zA-Z0-9_-]/g, "");
-}
-
-function sanitizePlaylistId(raw) {
-  return String(raw || "").trim().replace(/[^a-zA-Z0-9_-]/g, "");
-}
+const { sanitizeVideoId, sanitizePlaylistId } = require("../utils/extractors");
 
 // Search YouTube educational content
 router.get("/search", auth, async (req, res) => {

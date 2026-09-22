@@ -141,7 +141,7 @@ async function startServer() {
 
     const PORT = env.PORT;
 
-    server.listen(PORT, "0.0.0.0", () => {
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {

@@ -1,9 +1,10 @@
 import React, { useState, useRef } from "react";
-import { Upload, File, X, Info } from "lucide-react";
+import { Upload, FileText, Image as ImageIcon, FileCode, CheckCircle2, X, Sparkles, AlertCircle, ArrowUpRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function UploadBox({ onFileUpload, file, setFile }) {
   const [dragActive, setDragActive] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const inputRef = useRef(null);
 
   const handleDrag = (e) => {
@@ -33,29 +34,45 @@ export default function UploadBox({ onFileUpload, file, setFile }) {
     }
   };
 
-  const handleFile = (file) => {
-    const allowedTypes = ["application/pdf", "image/png", "image/jpeg", "text/plain"];
-    if (allowedTypes.includes(file.type)) {
-      setFile(file);
-      onFileUpload(file);
+  const handleFile = (selectedFile) => {
+    setErrorMessage("");
+    const allowedExtensions = [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".txt", ".md", ".py", ".js", ".cpp", ".java"];
+    const fileExt = "." + selectedFile.name.split(".").pop().toLowerCase();
+    const isAllowed = selectedFile.type.startsWith("image/") ||
+      selectedFile.type === "application/pdf" ||
+      selectedFile.type.startsWith("text/") ||
+      allowedExtensions.includes(fileExt);
+
+    if (isAllowed) {
+      setFile(selectedFile);
+      onFileUpload(selectedFile);
     } else {
-      alert("Please upload a PDF, Image, or Text file.");
+      setErrorMessage("Please upload a supported document (PDF, PNG/JPG, TXT, or Code files).");
     }
   };
 
   const clearFile = () => {
     setFile(null);
+    setErrorMessage("");
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const getFileIcon = (fileItem) => {
+    if (!fileItem) return <FileText size={24} />;
+    if (fileItem.type.startsWith("image/")) return <ImageIcon size={24} className="text-emerald-500 dark:text-emerald-400" />;
+    if (fileItem.name.endsWith(".pdf")) return <FileText size={24} className="text-rose-500 dark:text-rose-400" />;
+    return <FileCode size={24} className="text-indigo-500 dark:text-indigo-400" />;
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full space-y-3">
       <div
-        className={`relative group rounded-2xl border-2 border-dashed transition-all duration-300 ${
+        className={`relative group rounded-3xl border-2 border-dashed transition-all duration-300 overflow-hidden ${
           dragActive
-            ? "border-blue-500 bg-blue-500/10 shadow-[0_0_20px_rgba(59,130,246,0.2)]"
+            ? "border-emerald-500 bg-emerald-500/10 shadow-[0_0_30px_rgba(16,185,129,0.18)] scale-[1.01]"
             : file
-            ? "border-emerald-500/50 bg-emerald-500/5"
-            : "border-white/10 bg-white/5 hover:border-white/20"
+            ? "border-emerald-500/40 bg-emerald-500/5 dark:bg-emerald-950/20"
+            : "border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:border-emerald-500/40 hover:bg-emerald-500/[0.03]"
         }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -66,67 +83,119 @@ export default function UploadBox({ onFileUpload, file, setFile }) {
           ref={inputRef}
           type="file"
           className="hidden"
-          accept=".pdf,.png,.jpg,.jpeg,.txt"
+          accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.py,.js,.cpp,.java"
           onChange={handleChange}
         />
 
-        <div className="flex flex-col items-center justify-center py-10 px-4 text-center cursor-pointer" onClick={() => !file && inputRef.current.click()}>
+        <div
+          className="p-6 md:p-8 flex flex-col items-center justify-center text-center cursor-pointer select-none"
+          onClick={() => !file && inputRef.current?.click()}
+        >
           <AnimatePresence mode="wait">
             {file ? (
               <motion.div
-                key="file-ready"
-                initial={{ scale: 0.8, opacity: 0 }}
+                key="file-loaded"
+                initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                className="flex flex-col items-center"
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="w-full max-w-md flex flex-col items-center gap-3"
               >
                 <div className="relative">
-                  <div className="p-4 rounded-xl bg-emerald-500/20 text-emerald-400 mb-3">
-                    <File size={32} />
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-lg shadow-emerald-500/10">
+                    {getFileIcon(file)}
                   </div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       clearFile();
                     }}
-                    className="absolute -top-1 -right-1 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors shadow-lg"
+                    className="absolute -top-2 -right-2 p-1.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md transition-transform hover:scale-110 active:scale-95"
+                    title="Remove File"
                   >
-                    <X size={12} />
+                    <X size={13} />
                   </button>
                 </div>
-                <p className="text-sm font-medium text-white truncate max-w-[200px]">{file.name}</p>
-                <p className="text-xs text-muted mt-1">{(file.size / 1024).toFixed(1)} KB</p>
+
+                <div className="space-y-1 text-center w-full">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[220px]">
+                      {file.name}
+                    </span>
+                    <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                      Ready
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted font-mono">
+                    {(file.size / 1024).toFixed(1)} KB • {file.type || "Document"}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      inputRef.current?.click();
+                    }}
+                    className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                  >
+                    Change File <ArrowUpRight size={13} />
+                  </button>
+                </div>
               </motion.div>
             ) : (
               <motion.div
-                key="upload-prompt"
-                initial={{ scale: 0.8, opacity: 0 }}
+                key="prompt-state"
+                initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                className="flex flex-col items-center"
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="flex flex-col items-center gap-3"
               >
-                <div className={`p-4 rounded-2xl mb-4 transition-colors duration-300 ${dragActive ? 'bg-blue-500 text-white' : 'bg-white/5 text-muted group-hover:bg-white/10 group-hover:text-blue-400'}`}>
-                  <Upload size={32} />
+                <div
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                    dragActive
+                      ? "bg-emerald-500 text-white scale-110 shadow-lg shadow-emerald-500/30"
+                      : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500/20 group-hover:scale-105"
+                  }`}
+                >
+                  <Upload size={24} />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-1">Upload Assignment</h3>
-                <p className="text-sm text-muted">Drag and drop or click to browse</p>
-                <div className="mt-4 flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted/60">
-                   <span>PDF</span>
-                   <span className="w-1 h-1 rounded-full bg-white/20"></span>
-                   <span>Image</span>
-                   <span className="w-1 h-1 rounded-full bg-white/20"></span>
-                   <span>Text</span>
+
+                <div>
+                  <h4 className="text-sm md:text-base font-bold text-gray-900 dark:text-white">
+                    {dragActive ? "Drop your document here!" : "Upload Assignment Document"}
+                  </h4>
+                  <p className="text-xs text-muted mt-1 max-w-xs">
+                    Drag and drop your homework file or <span className="text-emerald-600 dark:text-emerald-400 font-semibold underline">click to browse</span>
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                  {["PDF Document", "Photos & Scans", "Code / TXT"].map((pill) => (
+                    <span
+                      key={pill}
+                      className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-muted"
+                    >
+                      {pill}
+                    </span>
+                  ))}
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </div>
-      
-      <div className="mt-3 flex items-start gap-2 text-xs text-muted/80 bg-white/5 p-3 rounded-lg border border-white/5">
-        <Info size={14} className="shrink-0 mt-0.5 text-blue-400" />
-        <p>Your assignment will be analyzed step-by-step using high-performance AI.</p>
-      </div>
+
+      {errorMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs font-semibold text-rose-500 dark:text-rose-400 flex items-center gap-2"
+        >
+          <AlertCircle size={15} className="shrink-0" />
+          <span>{errorMessage}</span>
+        </motion.div>
+      )}
     </div>
   );
 }

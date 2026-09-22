@@ -1,146 +1,109 @@
 import { motion } from "framer-motion";
-import {
-  BrainCircuit,
-  MessageSquareMore,
-  PlayCircle,
-  Sparkles,
-} from "lucide-react";
-
-const cards = [
-  {
-    icon: Sparkles,
-    title: "AI Summary",
-    text: "Turn videos into clean notes instantly.",
-    tone: "bg-blue-500/10 text-blue-300",
-  },
-  {
-    icon: BrainCircuit,
-    title: "Smart Quiz",
-    text: "Practice concepts with playable quizzes.",
-    tone: "bg-violet-500/10 text-violet-300",
-  },
-  {
-    icon: MessageSquareMore,
-    title: "AI Chat",
-    text: "Ask doubts while learning.",
-    tone: "bg-cyan-500/10 text-cyan-300",
-  },
-];
+import { Sparkles, Video, CheckCircle2, Play, BookOpen, Flame } from "lucide-react";
 
 export default function AuthShowcase({
-  title = "Catch your biggest learning opportunities",
-  subtitle = "Build playlists, summarize videos, revise with flashcards, and chat with video content in a polished AI learning workspace.",
+  tagline = "A Buddy for all your Binge learning.",
+  subtext = "Intelligent video transcripts, active recall flashcards, and interactive code sandboxes.",
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 18 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.45 }}
-      className="relative hidden xl:block"
-    >
-      <div className="relative overflow-hidden rounded-[2rem] bg-[linear-gradient(180deg,#0a1228_0%,#09111f_100%)] p-5">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(79,140,255,0.16),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(139,92,246,0.16),transparent_24%)]" />
+    <div className="relative flex flex-col justify-between h-full w-full overflow-hidden rounded-[2.2rem] bg-gradient-to-br from-[#8090fd] via-[#8997fd] to-[#97a5fd] dark:from-[#2a3068] dark:via-[#1e2350] dark:to-[#171b3d] p-6 sm:p-8 text-white shadow-xl">
+      {/* Ambient background rings & decorative glow */}
+      <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-indigo-950/20 blur-3xl" />
 
-        <motion.div
-          animate={{ y: [0, -8, 0], x: [0, 6, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -left-10 top-8 h-36 w-36 rounded-full bg-blue-500/20 blur-3xl"
-        />
-
-        <motion.div
-          animate={{ y: [0, 8, 0], x: [0, -6, 0] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-8 right-0 h-40 w-40 rounded-full bg-violet-500/20 blur-3xl"
-        />
-
-        <div className="relative rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.02))] p-5">
-          <div className="absolute inset-0 rounded-[1.75rem] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.05),transparent_55%)]" />
-
-          <div className="relative z-10 space-y-5">
-            <div className="grid grid-cols-2 gap-4">
-              <motion.div
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.12, duration: 0.4 }}
-                whileHover={{ y: -4 }}
-                className="glass premium-border rounded-[1.2rem] p-5"
-              >
-                <div className={`mb-3 inline-flex rounded-2xl p-3 ${cards[0].tone}`}>
-                  <Sparkles size={18} />
-                </div>
-                <p className="text-base font-semibold">{cards[0].title}</p>
-                <p className="mt-2 text-sm leading-6 text-muted">{cards[0].text}</p>
-              </motion.div>
-
-              <div />
-
-              <motion.div
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.4 }}
-                whileHover={{ y: -4 }}
-                className="glass premium-border rounded-[1.2rem] p-5"
-              >
-                <div className={`mb-3 inline-flex rounded-2xl p-3 ${cards[1].tone}`}>
-                  <BrainCircuit size={18} />
-                </div>
-                <p className="text-base font-semibold">{cards[1].title}</p>
-                <p className="mt-2 text-sm leading-6 text-muted">{cards[1].text}</p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.28, duration: 0.4 }}
-                whileHover={{ y: -4 }}
-                className="glass premium-border mt-8 rounded-[1.2rem] p-5"
-              >
-                <div className={`mb-3 inline-flex rounded-2xl p-3 ${cards[2].tone}`}>
-                  <MessageSquareMore size={18} />
-                </div>
-                <p className="text-base font-semibold">{cards[2].title}</p>
-                <p className="mt-2 text-sm leading-6 text-muted">{cards[2].text}</p>
-              </motion.div>
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.36, duration: 0.4 }}
-              className="rounded-[1.5rem] border border-white/10 bg-black/20 p-6 backdrop-blur-xl"
+      {/* Top Section: Brand Mark & Tagline */}
+      <div className="relative z-10">
+        {/* Stylized Logo: Cloud / Buddy Icon */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md shadow-sm border border-white/30 text-white">
+            <svg
+              viewBox="0 0 40 40"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-7 w-7"
             >
-              <div className="mb-4 inline-flex rounded-2xl bg-blue-500/10 p-3">
-                <PlayCircle className="text-blue-300" size={20} />
-              </div>
-
-              <h3 className="max-w-[560px] text-[1.75rem] font-black leading-[1.02] tracking-[-0.03em]">
-                {title}
-              </h3>
-
-              <p className="mt-4 max-w-[600px] text-sm leading-6 text-slate-300">
-                {subtitle}
-              </p>
-
-              <div className="mt-5 flex flex-wrap items-center gap-3">
-                <div className="flex -space-x-3">
-                  {["A", "K", "R", "S"].map((item, i) => (
-                    <div
-                      key={item + i}
-                      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/10 text-sm font-semibold text-white"
-                    >
-                      {item}
-                    </div>
-                  ))}
-                </div>
-
-                <p className="text-sm text-muted">
-                  Trusted by learners building better study habits
-                </p>
-              </div>
-            </motion.div>
+              <path
+                d="M14 30C9.58 30 6 26.42 6 22C6 17.88 9.11 14.49 13.17 14.04C14.61 8.87 19.34 5 25 5C31.63 5 37 10.37 37 17C37 17.34 36.99 17.67 36.96 18C39.88 19.12 42 22.02 42 25.5C42 29.64 38.64 33 34.5 33H14"
+                fill="white"
+                opacity="0.95"
+              />
+              <path
+                d="M20 18L26 22L20 26V18Z"
+                fill="#7b8cfd"
+              />
+            </svg>
+          </div>
+          <div>
+            <span className="text-lg font-black tracking-tight text-white drop-shadow-xs">
+              LearnSphere
+            </span>
+            <span className="block text-[10px] font-medium tracking-widest uppercase text-white/70">
+              Learning OS
+            </span>
           </div>
         </div>
+
+        {/* Tagline */}
+        <div className="mt-5 max-w-[360px]">
+          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white leading-snug">
+            {tagline}
+          </h2>
+          <p className="mt-1.5 text-xs sm:text-sm text-white/80 font-medium leading-relaxed">
+            {subtext}
+          </p>
+        </div>
       </div>
-    </motion.div>
+
+      {/* Center & Bottom: Cozy Video Learning Illustration */}
+      <div className="relative z-10 mt-4 flex flex-col items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 15 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="relative w-full max-w-[340px] sm:max-w-[360px] overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xs border border-white/20 p-1.5 shadow-xl"
+        >
+          <img
+            src="/images/auth-buddy-illustration.jpg"
+            alt="Binge Learning Buddy"
+            className="w-full max-h-[260px] rounded-xl object-cover shadow-sm"
+          />
+
+          {/* Floating Pill Badges (Interactivity) */}
+          <motion.div
+            initial={{ y: 0 }}
+            animate={{ y: [-3, 3, -3] }}
+            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-4 left-4 flex items-center gap-1.5 rounded-lg bg-white/95 dark:bg-slate-900/95 px-2.5 py-1 shadow-md border border-white/40 text-slate-800 dark:text-white"
+          >
+            <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
+              <CheckCircle2 size={10} />
+            </div>
+            <span className="text-[10px] font-bold">98% Retention</span>
+          </motion.div>
+
+          <motion.div
+            initial={{ y: 0 }}
+            animate={{ y: [3, -3, 3] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-lg bg-white/95 dark:bg-slate-900/95 px-2.5 py-1 shadow-md border border-white/40 text-slate-800 dark:text-white"
+          >
+            <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#8090fd] text-white">
+              <Play size={8} className="fill-white ml-0.5" />
+            </div>
+            <span className="text-[10px] font-bold">Sync AI Notes</span>
+          </motion.div>
+        </motion.div>
+
+        {/* Bottom Social Proof */}
+        <div className="mt-4 flex items-center gap-2.5 text-[11px] text-white/85">
+          <div className="flex -space-x-1.5">
+            <span className="inline-block h-5 w-5 rounded-full bg-amber-400 border border-white text-[9px] font-bold flex items-center justify-center text-slate-900">A</span>
+            <span className="inline-block h-5 w-5 rounded-full bg-sky-400 border border-white text-[9px] font-bold flex items-center justify-center text-slate-900">R</span>
+            <span className="inline-block h-5 w-5 rounded-full bg-emerald-400 border border-white text-[9px] font-bold flex items-center justify-center text-slate-900">K</span>
+          </div>
+          <span className="font-semibold">Join 10,000+ active learners</span>
+        </div>
+      </div>
+    </div>
   );
 }

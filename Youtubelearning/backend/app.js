@@ -68,6 +68,7 @@ function createApp() {
   app.use(
     helmet({
       crossOriginResourcePolicy: false,
+      crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
       contentSecurityPolicy: {
         useDefaults: true,
         directives: {
@@ -81,13 +82,15 @@ function createApp() {
     })
   );
 
-  app.use(cors({
+  const corsOptions = {
     origin: corsOrigin,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true
-  }));
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
+  };
 
-  app.options("*", cors());
+  app.use(cors(corsOptions));
+  app.options("*", cors(corsOptions));
 
   app.use((req, res, next) => {
     res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");

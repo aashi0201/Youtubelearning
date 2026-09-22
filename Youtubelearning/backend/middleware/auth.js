@@ -1,22 +1,43 @@
-const jwt = require("jsonwebtoken");
-const env = require("../config/env");
+const { verifyToken } = require("../utils/jwt");
 const User = require("../models/User");
+
+function parseCookies(cookieHeader) {
+  const list = {};
+  if (!cookieHeader) return list;
+  cookieHeader.split(";").forEach((cookie) => {
+    let [name, ...rest] = cookie.split("=");
+    name = name?.trim();
+    if (!name) return;
+    const value = rest.join("=").trim();
+    list[name] = decodeURIComponent(value);
+  });
+  return list;
+}
 
 function auth(req, res, next) {
   try {
-    const authHeader = req.headers.authorization;
+    let token = null;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    // 1. Check Authorization header
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    }
+
+    // 2. Check httpOnly Cookie if header not present
+    if (!token && req.headers.cookie) {
+      const cookies = parseCookies(req.headers.cookie);
+      token = cookies.token;
+    }
+
+    if (!token) {
       return res.status(401).json({
         ok: false,
         error: "No token provided"
       });
     }
 
-    const token = authHeader.split(" ")[1];
-
-    const decoded = jwt.verify(token, env.JWT_SECRET);
-
+    const decoded = verifyToken(token);
     const id = decoded.id || decoded._id || decoded.userId;
 
     req.user = {

@@ -1,37 +1,36 @@
 function buildSummaryPrompt({ video, transcriptText }) {
   const videoTitle = video?.title || "";
   const description = video?.description || "";
-  const channelTitle = video?.channelTitle || "";
-  const duration = video?.duration || "";
 
   const sourceText = transcriptText?.trim()
-    ? `Transcript:\n${transcriptText}`
-    : `Transcript not available.\nUse the video metadata only.`;
+    ? `Video Transcript:\n${transcriptText}`
+    : `Video Title: ${videoTitle}\nVideo Description:\n${description}`;
 
   return [
     {
       role: "system",
       content:
-        "You are an AI learning assistant for coding and educational videos. Return concise structured study notes in valid JSON only. Keep output practical and student-friendly."
+        "You are an AI learning assistant for educational videos. Return concise structured study notes in valid JSON only. Focus purely on subject matter knowledge, concepts, and key learnings."
     },
     {
       role: "user",
       content: `
-Create a structured learning summary for this YouTube video.
+Create a structured learning summary for this educational video.
 
-Video Title: ${videoTitle}
-Channel: ${channelTitle}
-Duration: ${duration}
-Description: ${description}
+Topic / Title: ${videoTitle}
 
 ${sourceText}
 
+CRITICAL RULES:
+1. Focus on educational concepts, tools, skills, and takeaways.
+2. DO NOT include meta-information like channel name, video duration, or social links in the key concepts or points.
+
 Return ONLY valid JSON in this structure:
 {
-  "summary": "short paragraph summarizing the video",
-  "keyConcepts": ["concept 1", "concept 2", ...],
-  "importantPoints": ["point 1", "point 2", ...],
-  "revisionPoints": ["point 1", "point 2", ...]
+  "summary": "Short paragraph summarizing the main subject matter taught in the video",
+  "keyConcepts": ["Concept 1", "Concept 2"],
+  "importantPoints": ["Key takeaway 1", "Key takeaway 2"],
+  "revisionPoints": ["Revision item 1", "Revision item 2"]
 }
       `.trim()
     }

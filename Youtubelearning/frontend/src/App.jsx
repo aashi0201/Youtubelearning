@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import useAuth from "./hooks/useAuth";
 import AppLayout from "./layouts/AppLayout";
 import ErrorBoundary from "./components/common/ErrorBoundary";
@@ -59,6 +60,7 @@ function AppRoutes() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/welcome" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -72,6 +74,7 @@ function AppRoutes() {
             <Route path="/playlists" element={<PlaylistsPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/profile" element={<SettingsPage />} />
             <Route path="/community" element={<CommunityPage />} />
             <Route path="/dashboard/streak" element={<StreakPage />} />
             <Route path="/coding-dashboard" element={<CodingDashboardPage />} />
@@ -86,13 +89,15 @@ function AppRoutes() {
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <ToastProvider>
-          <ErrorBoundary>
-            <AppRoutes />
-          </ErrorBoundary>
-        </ToastProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <ErrorBoundary>
+              <AppRoutes />
+            </ErrorBoundary>
+          </ToastProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

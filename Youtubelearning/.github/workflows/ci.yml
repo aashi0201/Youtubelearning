@@ -1,0 +1,40 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master, dev ]
+
+jobs:
+  lint-test-build:
+    name: Lint, Test & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npm --prefix backend install
+          npm --prefix frontend install
+
+      - name: Run ESLint
+        run: npm run frontend:lint
+
+      - name: Run Backend & Integration Tests
+        run: npm test
+
+      - name: Check Backend Syntax
+        run: npm run backend:check
+
+      - name: Build Frontend Production Bundle
+        run: npm run frontend:build

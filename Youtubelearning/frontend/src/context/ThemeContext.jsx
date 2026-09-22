@@ -1,28 +1,66 @@
-import { createContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-export const ThemeContext = createContext();
+export const ThemeContext = createContext({
+  theme: "dark",
+  toggleTheme: () => {},
+  setTheme: () => {},
+});
+
+function getSavedTheme() {
+  try {
+    const saved = localStorage.getItem("theme");
+    if (saved === "light" || saved === "dark") return saved;
+    // Default to dark mode for consistent theme
+    return "dark";
+  } catch {
+    return "dark";
+  }
+}
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(
-    localStorage.getItem("theme") || "dark"
-  );
+  const [theme, setThemeState] = useState(getSavedTheme);
 
-  useEffect(() => {
+  // Apply theme immediately to <html> root element
+  const applyThemeToDOM = (currentTheme) => {
     const root = document.documentElement;
-
-    if (theme === "light") {
+    root.setAttribute("data-theme", currentTheme);
+    if (currentTheme === "light") {
       root.classList.add("light");
       root.classList.remove("dark");
     } else {
       root.classList.add("dark");
       root.classList.remove("light");
     }
+  };
 
-    localStorage.setItem("theme", theme);
+  useEffect(() => {
+    applyThemeToDOM(theme);
+    try {
+      localStorage.setItem("theme", theme);
+    } catch {
+      // ignore
+    }
   }, [theme]);
 
+  // Sync across browser tabs
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === "theme" && (e.newValue === "light" || e.newValue === "dark")) {
+        setThemeState(e.newValue);
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
   const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+    setThemeState((prev) => (prev === "dark" ? "light" : "dark"));
+  };
+
+  const setTheme = (newTheme) => {
+    if (newTheme === "light" || newTheme === "dark") {
+      setThemeState(newTheme);
+    }
   };
 
   const value = useMemo(
@@ -39,4 +77,12 @@ export function ThemeProvider({ children }) {
       {children}
     </ThemeContext.Provider>
   );
+}
+
+export function useTheme() {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error("useTheme must be used within a ThemeProvider");
+  }
+  return context;
 }
