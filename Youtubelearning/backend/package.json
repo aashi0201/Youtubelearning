@@ -6,6 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
+    "build": "echo 'Backend build successful'",
     "dev": "node --watch server.js",
     "seed": "node scripts/seed.js",
     "test": "node tests/env.test.js && node tests/auth.test.js && node tests/api.integration.test.js"
