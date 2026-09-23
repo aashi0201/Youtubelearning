@@ -286,8 +286,8 @@ router.get("/connections", auth, async (req, res) => {
 // [GET] /api/community/messages/:userId
 router.get("/messages/:userId", auth, async (req, res) => {
   try {
-    const currentUserId = req.user.userId || req.user.id;
-    const otherUserId = req.params.userId;
+    const currentUserId = String(req.user.userId || req.user.id);
+    const otherUserId = String(req.params.userId);
 
     const messages = await Message.find({
       $or: [
@@ -298,15 +298,32 @@ router.get("/messages/:userId", auth, async (req, res) => {
       .sort({ createdAt: 1 })
       .lean();
 
-    const formattedMessages = messages.map((m) => ({
-      ...m,
-      sender: String(m.sender),
-      receiver: String(m.receiver),
-      senderId: String(m.sender),
-      receiverId: String(m.receiver),
-    }));
+    // Deduplicate any consecutive duplicate messages from DB history
+    const deduped = [];
+    for (const m of messages) {
+      const isDuplicate = deduped.some((existing) => {
+        if (String(existing._id) === String(m._id)) return true;
+        const sameSender = String(existing.sender) === String(m.sender);
+        const sameReceiver = String(existing.receiver) === String(m.receiver);
+        const sameContent = String(existing.content || "").trim() === String(m.content || "").trim();
+        const timeDiff = Math.abs(new Date(existing.createdAt).getTime() - new Date(m.createdAt).getTime());
+        return sameSender && sameReceiver && sameContent && timeDiff < 3000;
+      });
 
-    res.json(formattedMessages);
+      if (!isDuplicate) {
+        deduped.push({
+          ...m,
+          _id: String(m._id),
+          sender: String(m.sender),
+          receiver: String(m.receiver),
+          senderId: String(m.sender),
+          receiverId: String(m.receiver),
+          message: m.content,
+        });
+      }
+    }
+
+    res.json(deduped);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -315,33 +332,60 @@ router.get("/messages/:userId", auth, async (req, res) => {
 // [POST] Internal Message Saving
 router.post("/messages", auth, async (req, res) => {
   try {
-    const senderId = req.user.userId || req.user.id;
+    const senderId = String(req.user.userId || req.user.id);
     const { receiverId, message } = req.body;
+    const receiverIdStr = String(receiverId || "").trim();
+    const text = String(message || "").trim();
 
-    if (!receiverId || !message) {
+    if (!receiverIdStr || !text) {
       return res.status(400).json({ error: "receiverId and message are required" });
+    }
+
+    // Duplicate guard: if identical message was saved in last 2.5 seconds (e.g. by socket), return it
+    const recent = await Message.findOne({
+      sender: senderId,
+      receiver: receiverIdStr,
+      content: text,
+      createdAt: { $gte: new Date(Date.now() - 2500) },
+    }).lean();
+
+    if (recent) {
+      const messageData = {
+        ...recent,
+        _id: String(recent._id),
+        sender: senderId,
+        receiver: receiverIdStr,
+        senderId,
+        receiverId: receiverIdStr,
+        content: text,
+        message: text,
+      };
+      return res.json(messageData);
     }
 
     const newMessage = new Message({
       sender: senderId,
-      receiver: receiverId,
-      content: message,
+      receiver: receiverIdStr,
+      content: text,
     });
 
     await newMessage.save();
 
     const messageData = {
       ...newMessage.toObject(),
-      sender: String(senderId),
-      receiver: String(receiverId),
-      senderId: String(senderId),
-      receiverId: String(receiverId),
+      _id: String(newMessage._id),
+      sender: senderId,
+      receiver: receiverIdStr,
+      senderId,
+      receiverId: receiverIdStr,
+      content: text,
+      message: text,
     };
 
     const io = req.app.get("io");
     const onlineUsers = req.app.get("onlineUsers");
     if (io && onlineUsers) {
-      const receiverSocketId = onlineUsers.get(String(receiverId));
+      const receiverSocketId = onlineUsers.get(receiverIdStr);
       if (receiverSocketId) {
         io.to(receiverSocketId).emit("newMessage", messageData);
       }

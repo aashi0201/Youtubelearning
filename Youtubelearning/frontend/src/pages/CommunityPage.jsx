@@ -46,6 +46,7 @@ export default function CommunityPage() {
   const [toastMessage, setToastMessage] = useState(null);
 
   const selectedChatUserRef = useRef(null);
+  const isSendingRef = useRef(false);
 
   useEffect(() => {
     selectedChatUserRef.current = selectedChatUser;
@@ -57,10 +58,10 @@ export default function CommunityPage() {
     const token = localStorage.getItem("token");
     setCurrentUser({ ...user, id, _id: id });
 
-    // Initialize socket
+    // Initialize socket with websocket + polling fallback for resilience
     const newSocket = io(SOCKET_URL, {
       auth: { userId: id, token },
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
       withCredentials: true,
     });
 
@@ -75,14 +76,24 @@ export default function CommunityPage() {
         const currentChatUser = selectedChatUserRef.current;
         if (!currentChatUser) return prev;
 
-        const msgSender = String(msg.sender?._id || msg.sender);
-        const msgReceiver = String(msg.receiver?._id || msg.receiver);
-        const activeChatId = String(currentChatUser._id || currentChatUser.id);
+        const msgSender = String(msg.sender?._id || msg.sender || msg.senderId || "");
+        const msgReceiver = String(msg.receiver?._id || msg.receiver || msg.receiverId || "");
+        const activeChatId = String(currentChatUser._id || currentChatUser.id || "");
 
         if (msgSender === activeChatId || msgReceiver === activeChatId) {
-          if (msg._id && prev.some((m) => String(m._id) === String(msg._id))) {
-            return prev;
-          }
+          const msgId = String(msg._id || "");
+          const msgText = String(msg.content || msg.message || "").trim();
+          const msgTime = new Date(msg.createdAt || Date.now()).getTime();
+
+          const isDuplicate = prev.some((m) => {
+            if (msgId && m._id && String(m._id) === msgId) return true;
+            const mSender = String(m.sender?._id || m.sender || m.senderId || "");
+            const mText = String(m.content || m.message || "").trim();
+            const mTime = new Date(m.createdAt || Date.now()).getTime();
+            return mSender === msgSender && mText === msgText && Math.abs(msgTime - mTime) < 3000;
+          });
+
+          if (isDuplicate) return prev;
           return [...prev, msg];
         }
         return prev;
@@ -167,7 +178,25 @@ export default function CommunityPage() {
     try {
       const headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
       const res = await axios.get(`${API_BASE}/community/messages/${userId}`, { headers });
-      setMessages(res.data);
+      const raw = Array.isArray(res.data) ? res.data : [];
+      const deduped = [];
+      for (const m of raw) {
+        const mId = String(m._id || "");
+        const mSender = String(m.sender?._id || m.sender || m.senderId || "");
+        const mText = String(m.content || m.message || "").trim();
+        const mTime = new Date(m.createdAt || Date.now()).getTime();
+
+        const isDup = deduped.some((existing) => {
+          if (mId && existing._id && String(existing._id) === mId) return true;
+          const eSender = String(existing.sender?._id || existing.sender || existing.senderId || "");
+          const eText = String(existing.content || existing.message || "").trim();
+          const eTime = new Date(existing.createdAt || Date.now()).getTime();
+          return mSender === eSender && mText === eText && Math.abs(mTime - eTime) < 3000;
+        });
+
+        if (!isDup) deduped.push(m);
+      }
+      setMessages(deduped);
     } catch (err) {
       console.error("Error fetching messages:", err);
     }
@@ -205,24 +234,27 @@ export default function CommunityPage() {
 
   const handleSendMessage = async (content) => {
     if (!selectedChatUser || !content.trim()) return;
-    const targetId = String(selectedChatUser._id || selectedChatUser.id);
-    const text = content.trim();
+    if (isSendingRef.current) return;
+    isSendingRef.current = true;
 
-    // 1. If socket is connected, emit via socket (server saves to DB and broadcasts to both users)
-    if (socket && socket.connected) {
-      try {
-        socket.emit("sendMessage", {
-          receiverId: targetId,
-          message: text,
-        });
-        return;
-      } catch (err) {
-        console.error("Socket send error, attempting REST fallback:", err);
-      }
-    }
-
-    // 2. Fallback via REST only if socket is not available or disconnected
     try {
+      const targetId = String(selectedChatUser._id || selectedChatUser.id);
+      const text = content.trim();
+
+      // 1. If socket is connected, emit via socket (server saves to DB and broadcasts to both users)
+      if (socket && socket.connected) {
+        try {
+          socket.emit("sendMessage", {
+            receiverId: targetId,
+            message: text,
+          });
+          return;
+        } catch (err) {
+          console.error("Socket send error, attempting REST fallback:", err);
+        }
+      }
+
+      // 2. Fallback via REST only if socket is not available or disconnected
       const headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
       const res = await axios.post(
         `${API_BASE}/community/messages`,
@@ -235,13 +267,27 @@ export default function CommunityPage() {
 
       if (res.data) {
         setMessages((prev) => {
-          const exists = prev.some((m) => m._id && String(m._id) === String(res.data._id));
+          const resId = String(res.data._id || "");
+          const resText = String(res.data.content || res.data.message || "").trim();
+          const resTime = new Date(res.data.createdAt || Date.now()).getTime();
+
+          const exists = prev.some((m) => {
+            if (resId && m._id && String(m._id) === resId) return true;
+            const mText = String(m.content || m.message || "").trim();
+            const mTime = new Date(m.createdAt || Date.now()).getTime();
+            return mText === resText && Math.abs(resTime - mTime) < 3000;
+          });
+
           if (exists) return prev;
           return [...prev, res.data];
         });
       }
     } catch (err) {
       console.error("Error persisting message:", err);
+    } finally {
+      setTimeout(() => {
+        isSendingRef.current = false;
+      }, 500);
     }
   };
 

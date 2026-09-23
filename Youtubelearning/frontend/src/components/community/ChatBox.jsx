@@ -134,17 +134,25 @@ export default function ChatBox({
     }
   };
 
+  const [isSending, setIsSending] = useState(false);
+
   const handleSend = (e) => {
     e?.preventDefault?.();
-    if (!inputText.trim()) return;
+    const text = inputText.trim();
+    if (!text || isSending) return;
+
+    setIsSending(true);
+    setInputText("");
+    setShowEmojiPicker(false);
 
     if (socket && targetId) {
       socket.emit("stop-typing", { senderId: myId, receiverId: targetId });
     }
 
-    onSendMessage(inputText.trim());
-    setInputText("");
-    setShowEmojiPicker(false);
+    onSendMessage(text);
+    setTimeout(() => {
+      setIsSending(false);
+    }, 500);
   };
 
   const insertEmoji = (emoji) => {
@@ -410,7 +418,7 @@ export default function ChatBox({
           {/* Send Button */}
           <button
             type="submit"
-            disabled={!inputText.trim()}
+            disabled={!inputText.trim() || isSending}
             className="p-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl transition shadow-md shadow-indigo-600/20 cursor-pointer shrink-0"
             title="Send message"
           >

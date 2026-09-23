@@ -84,32 +84,61 @@ io.on("connection", (socket) => {
 
   socket.on("sendMessage", async ({ receiverId, message }) => {
     try {
-      const receiverIdStr = String(receiverId);
-      const senderIdStr = String(socket.userId);
+      const receiverIdStr = String(receiverId || "").trim();
+      const senderIdStr = String(socket.userId || "").trim();
+      const text = String(message || "").trim();
+
+      if (!receiverIdStr || !text) return;
+
+      // Duplicate guard: prevent saving identical message within 2.5 seconds
+      const recent = await Message.findOne({
+        sender: senderIdStr,
+        receiver: receiverIdStr,
+        content: text,
+        createdAt: { $gte: new Date(Date.now() - 2500) },
+      }).lean();
+
+      if (recent) {
+        console.log(`[Socket] Duplicate message suppressed: "${text}"`);
+        const messageData = {
+          ...recent,
+          _id: String(recent._id),
+          sender: String(recent.sender),
+          receiver: String(recent.receiver),
+          content: recent.content,
+          message: recent.content,
+        };
+        socket.emit("newMessage", messageData);
+        return;
+      }
 
       const newMessage = await Message.create({
         sender: senderIdStr,
         receiver: receiverIdStr,
-        content: message,
+        content: text,
       });
-      
-      console.log(`[Message] ${senderIdStr} -> ${receiverIdStr}: "${message}"`);
 
-      const messageData = newMessage.toObject();
-      // Ensure sender and receiver IDs are strings in the emitted object
-      messageData.sender = String(messageData.sender);
-      messageData.receiver = String(messageData.receiver);
+      console.log(`[Message] ${senderIdStr} -> ${receiverIdStr}: "${text}"`);
+
+      const messageData = {
+        ...newMessage.toObject(),
+        _id: String(newMessage._id),
+        sender: senderIdStr,
+        receiver: receiverIdStr,
+        content: text,
+        message: text,
+      };
 
       const receiverSocketId = onlineUsers.get(receiverIdStr);
-      
-      if (receiverSocketId) {
+
+      if (receiverSocketId && receiverSocketId !== socket.id) {
         io.to(receiverSocketId).emit("newMessage", messageData);
         console.log(`[Socket] Delivered to receiver socket: ${receiverSocketId}`);
-      } else {
+      } else if (!receiverSocketId) {
         console.log(`[Socket] Receiver ${receiverIdStr} is OFFLINE.`);
       }
 
-      // ALWAYS send back to sender so their UI updates
+      // Send to sender so their UI updates
       socket.emit("newMessage", messageData);
     } catch (err) {
       console.error("[Socket] Message error:", err);
