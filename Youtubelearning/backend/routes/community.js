@@ -405,6 +405,13 @@ router.get("/users/:userId", auth, async (req, res) => {
       success: true,
       user: {
         ...user,
+        portfolioProjects: Array.isArray(user.portfolioProjects) ? user.portfolioProjects : [],
+        experience: Array.isArray(user.experience) ? user.experience : [],
+        education: Array.isArray(user.education) ? user.education : [],
+        skills: Array.isArray(user.skills) ? user.skills : [],
+        socialLinks: user.socialLinks || {},
+        verifiedPlatforms: user.verifiedPlatforms || {},
+        stats: user.stats || { streakDays: 0, xp: 0, completedVideos: 0, totalWatchTimeSec: 0, completedPlaylists: 0 },
         connectionsCount,
         isConnected: Boolean(connection),
       },

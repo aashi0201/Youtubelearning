@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const User = require("../models/User");
 const UserActivity = require("../models/UserActivity");
 const CodingActivity = require("../models/CodingActivity");
@@ -164,13 +165,21 @@ exports.disconnectProfile = async (req, res, next) => {
 
 exports.getTrackerStats = exports.getDashboardStats = async (req, res, next) => {
   try {
-    const userId = req.params.userId === "me" ? req.user.id : req.params.userId;
+    const rawUserId = req.params.userId === "me" ? req.user.id : req.params.userId;
     const forceRefresh = req.query.refresh === "true";
 
-    const user = await User.findById(userId);
+    let user = null;
+    if (mongoose.Types.ObjectId.isValid(rawUserId)) {
+      user = await User.findById(rawUserId);
+    }
+    if (!user) {
+      user = await User.findOne({ username: rawUserId });
+    }
     if (!user) {
       return res.status(404).json({ ok: false, error: "User not found" });
     }
+
+    const userId = user._id;
 
     if (!user.verificationToken) {
       user.verificationToken = `ls-verify-${user._id.toString().slice(-6)}`;

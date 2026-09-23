@@ -80,6 +80,9 @@ export default function CommunityPage() {
         const activeChatId = String(currentChatUser._id || currentChatUser.id);
 
         if (msgSender === activeChatId || msgReceiver === activeChatId) {
+          if (msg._id && prev.some((m) => String(m._id) === String(msg._id))) {
+            return prev;
+          }
           return [...prev, msg];
         }
         return prev;
@@ -203,34 +206,36 @@ export default function CommunityPage() {
   const handleSendMessage = async (content) => {
     if (!selectedChatUser || !content.trim()) return;
     const targetId = String(selectedChatUser._id || selectedChatUser.id);
+    const text = content.trim();
 
-    // 1. Emit via socket for instant live updates
-    if (socket) {
+    // 1. If socket is connected, emit via socket (server saves to DB and broadcasts to both users)
+    if (socket && socket.connected) {
       try {
         socket.emit("sendMessage", {
           receiverId: targetId,
-          message: content.trim(),
+          message: text,
         });
+        return;
       } catch (err) {
-        console.error("Socket send error:", err);
+        console.error("Socket send error, attempting REST fallback:", err);
       }
     }
 
-    // 2. Also save via REST to guarantee DB persistence
+    // 2. Fallback via REST only if socket is not available or disconnected
     try {
       const headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
       const res = await axios.post(
         `${API_BASE}/community/messages`,
         {
           receiverId: targetId,
-          message: content.trim(),
+          message: text,
         },
         { headers }
       );
 
       if (res.data) {
         setMessages((prev) => {
-          const exists = prev.some((m) => m._id && m._id === res.data._id);
+          const exists = prev.some((m) => m._id && String(m._id) === String(res.data._id));
           if (exists) return prev;
           return [...prev, res.data];
         });
