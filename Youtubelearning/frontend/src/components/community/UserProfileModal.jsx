@@ -287,6 +287,18 @@ export default function UserProfileModal({
                   <ExternalLink size={10} className="text-gray-400" />
                 </a>
               )}
+              {user.codechef && (
+                <a
+                  href={user.codechef.startsWith("http") ? user.codechef : `https://www.codechef.com/users/${user.codechef}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition text-rose-600 dark:text-rose-400"
+                >
+                  <Code2 size={13} />
+                  <span>CodeChef</span>
+                  <ExternalLink size={10} className="text-gray-400" />
+                </a>
+              )}
               {user.website && (
                 <a
                   href={user.website.startsWith("http") ? user.website : `https://${user.website}`}

@@ -121,6 +121,7 @@ export default function PublicProfilePage() {
             const lc = statsRes.stats?.leetcode;
             const cf = statsRes.stats?.codeforces;
             const gh = statsRes.stats?.github;
+            const cc = statsRes.stats?.codechef;
 
             const easy = lc?.easySolved || 0;
             const med = lc?.mediumSolved || 0;
@@ -150,9 +151,10 @@ export default function PublicProfilePage() {
               codeforcesRating: cf?.rating || 0,
               codeforcesRank: cf?.rank || "",
               codeforcesTotalSolved: cf?.totalSolved || 0,
+              codechefRating: cc?.currentRating || cc?.rating || cc?.stars || "",
               githubRepos: gh?.publicRepos || 0,
               githubTotal: gh?.totalSubmissions || 0,
-              username: lc?.username || cf?.username || "",
+              username: lc?.username || cf?.username || cc?.username || "",
             });
 
             if (statsRes.platformActivities) {
@@ -577,6 +579,42 @@ export default function PublicProfilePage() {
                       <ExternalLink size={10} className="opacity-60" />
                     </a>
                   )}
+                  {student?.leetcode && (
+                    <a
+                      href={student.leetcode.startsWith("http") ? student.leetcode : `https://leetcode.com/u/${student.leetcode}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition"
+                    >
+                      <Code2 size={13} />
+                      <span>LeetCode</span>
+                      <ExternalLink size={10} className="opacity-60" />
+                    </a>
+                  )}
+                  {student?.codeforces && (
+                    <a
+                      href={student.codeforces.startsWith("http") ? student.codeforces : `https://codeforces.com/profile/${student.codeforces}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-500/10 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition"
+                    >
+                      <Flame size={13} />
+                      <span>Codeforces</span>
+                      <ExternalLink size={10} className="opacity-60" />
+                    </a>
+                  )}
+                  {student?.codechef && (
+                    <a
+                      href={student.codechef.startsWith("http") ? student.codechef : `https://www.codechef.com/users/${student.codechef}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-rose-500/10 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition"
+                    >
+                      <Code2 size={13} />
+                      <span>CodeChef</span>
+                      <ExternalLink size={10} className="opacity-60" />
+                    </a>
+                  )}
                 </div>
               )}
             </div>
@@ -982,6 +1020,48 @@ export default function PublicProfilePage() {
                     <div className="py-4 text-center border border-dashed border-gray-200 dark:border-gray-800 rounded-xl space-y-1">
                       <p className="text-xs font-bold text-gray-600 dark:text-gray-300">GitHub Not Linked</p>
                       <p className="text-[10px] text-gray-400">No repository profile attached.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* CodeChef Card */}
+                <div className="p-6 rounded-3xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center font-bold">
+                        <Code2 size={15} />
+                      </div>
+                      <h4 className="text-xs font-bold text-gray-900 dark:text-white">CodeChef</h4>
+                    </div>
+                    {student?.codechef && (
+                      <a
+                        href={student.codechef.startsWith("http") ? student.codechef : `https://www.codechef.com/users/${student.codechef}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:underline"
+                      >
+                        <ExternalLink size={12} />
+                      </a>
+                    )}
+                  </div>
+
+                  {student?.codechef ? (
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">@{student.codechef}</p>
+                        <p className="text-xl font-black text-gray-900 dark:text-white mt-0.5">
+                          {codingStats.codechefRating || "Connected"}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-100 dark:border-gray-800 text-gray-500">
+                        <span>Platform: <strong className="text-gray-900 dark:text-white">CodeChef</strong></span>
+                        <span>Tracked: <strong className="text-emerald-500">Active</strong></span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-4 text-center border border-dashed border-gray-200 dark:border-gray-800 rounded-xl space-y-1">
+                      <p className="text-xs font-bold text-gray-600 dark:text-gray-300">CodeChef Not Linked</p>
+                      <p className="text-[10px] text-gray-400">No profile handle attached.</p>
                     </div>
                   )}
                 </div>

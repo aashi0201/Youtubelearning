@@ -84,6 +84,7 @@ exports.updateProfiles = async (req, res, next) => {
     const cf = req.body.codeforces !== undefined ? extractCodeforcesHandle(req.body.codeforces) : user.codeforces;
     const cc = req.body.codechef !== undefined ? extractCodeChefUsername(req.body.codechef) : user.codechef;
     const tuf = req.body.tuf !== undefined ? (req.body.tuf || "").trim() : user.tuf;
+    const gh = req.body.github !== undefined ? String(req.body.github).trim() : user.github;
 
     // Flush all stale caches when updating profiles
     flushAllCodingCache();
@@ -108,6 +109,7 @@ exports.updateProfiles = async (req, res, next) => {
     user.codeforces = cf;
     user.codechef = cc;
     user.tuf = tuf;
+    user.github = gh;
 
     await user.save();
 
@@ -126,7 +128,7 @@ exports.disconnectProfile = async (req, res, next) => {
     const userId = req.user.id;
     const { platform } = req.body;
 
-    if (!["leetcode", "codeforces", "codechef", "tuf"].includes(platform)) {
+    if (!["leetcode", "codeforces", "codechef", "tuf", "github"].includes(platform)) {
       return res.status(400).json({ ok: false, error: "Invalid platform" });
     }
 

@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
   AlertTriangle,
   Award,
@@ -18,6 +18,7 @@ import {
   Info,
   KeyRound,
   Layers,
+  Link2,
   Lock,
   LogOut,
   MapPin,
@@ -177,10 +178,31 @@ export const PRESET_AVATARS = [
 
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, updateUser, clearAuth } = useAuth();
 
-  // Active Tab: "overview", "badges", "heatmap", "settings", "portfolio"
-  const [activeTab, setActiveTab] = useState("overview");
+  // Active Tab: "overview", "badges", "heatmap", "portfolio", "platforms", "settings"
+  const tabParam = searchParams.get("tab");
+  const validTabs = ["overview", "badges", "heatmap", "portfolio", "platforms", "settings"];
+  const [activeTab, setActiveTab] = useState(
+    tabParam && validTabs.includes(tabParam) ? tabParam : "overview"
+  );
+
+  useEffect(() => {
+    const currentTab = searchParams.get("tab");
+    if (currentTab && validTabs.includes(currentTab)) {
+      setActiveTab(currentTab);
+    }
+  }, [searchParams]);
+
+  const handleSelectTab = (tab) => {
+    setActiveTab(tab);
+    setSearchParams((prev) => {
+      const sp = new URLSearchParams(prev);
+      sp.set("tab", tab);
+      return sp;
+    }, { replace: true });
+  };
 
   // Notifications & State
   const [message, setMessage] = useState("");
@@ -477,14 +499,16 @@ export default function SettingsPage() {
       setProfileForm((prev) => ({
         ...prev,
         name: user.name || prev.name,
+        username: user.username || prev.username,
+        avatar: user.avatar !== undefined ? user.avatar : prev.avatar,
         bio: user.bio || prev.bio,
         location: user.location || prev.location,
         schoolCompany: user.schoolCompany || prev.schoolCompany,
         website: user.website || prev.website,
-        leetcode: user.leetcode || prev.leetcode,
-        codeforces: user.codeforces || prev.codeforces,
-        codechef: user.codechef || prev.codechef,
-        github: user.github || prev.github,
+        leetcode: user.leetcode !== undefined ? user.leetcode : prev.leetcode,
+        codeforces: user.codeforces !== undefined ? user.codeforces : prev.codeforces,
+        codechef: user.codechef !== undefined ? user.codechef : prev.codechef,
+        github: user.github !== undefined ? user.github : prev.github,
       }));
       if (user.verifiedPlatforms) {
         setVerifiedPlatforms(user.verifiedPlatforms);
@@ -494,6 +518,19 @@ export default function SettingsPage() {
       }
     }
   }, [user]);
+
+  // Real-time listener for platform updates made anywhere (e.g. Coding Dashboard)
+  useEffect(() => {
+    const handlePlatformChange = () => {
+      loadAllData(false);
+    };
+    window.addEventListener("storage", handlePlatformChange);
+    window.addEventListener("userProfileUpdated", handlePlatformChange);
+    return () => {
+      window.removeEventListener("storage", handlePlatformChange);
+      window.removeEventListener("userProfileUpdated", handlePlatformChange);
+    };
+  }, [loadAllData]);
 
   // Compute LearnSphere platform activities from video progress and quiz attempts
   const learnSphereActivities = useMemo(() => {
@@ -859,6 +896,7 @@ export default function SettingsPage() {
         leetcode: profileForm.leetcode,
         codeforces: profileForm.codeforces,
         codechef: profileForm.codechef,
+        github: profileForm.github,
       });
 
       const res = await updateUserProfile({
@@ -882,6 +920,8 @@ export default function SettingsPage() {
         ...(res.user || {}),
       };
       updateUser(updated);
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("userProfileUpdated", { detail: updated }));
       setMessage("Profile details & portfolio saved successfully!");
       setTimeout(() => setMessage(""), 3500);
       loadAllData(true);
@@ -1322,7 +1362,7 @@ export default function SettingsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-black/10 dark:border-white/10 pb-3">
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setActiveTab("overview")}
+            onClick={() => handleSelectTab("overview")}
             className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${
               activeTab === "overview"
                 ? "bg-[#8291fa] text-white shadow-md shadow-indigo-300/30"
@@ -1334,7 +1374,7 @@ export default function SettingsPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab("badges")}
+            onClick={() => handleSelectTab("badges")}
             className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${
               activeTab === "badges"
                 ? "bg-[#8291fa] text-white shadow-md shadow-indigo-300/30"
@@ -1346,7 +1386,7 @@ export default function SettingsPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab("heatmap")}
+            onClick={() => handleSelectTab("heatmap")}
             className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${
               activeTab === "heatmap"
                 ? "bg-[#8291fa] text-white shadow-md shadow-indigo-300/30"
@@ -1358,7 +1398,7 @@ export default function SettingsPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab("portfolio")}
+            onClick={() => handleSelectTab("portfolio")}
             className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${
               activeTab === "portfolio"
                 ? "bg-[#8291fa] text-white shadow-md shadow-indigo-300/30"
@@ -1370,15 +1410,27 @@ export default function SettingsPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab("settings")}
+            onClick={() => handleSelectTab("platforms")}
+            className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${
+              activeTab === "platforms"
+                ? "bg-[#8291fa] text-white shadow-md shadow-indigo-300/30"
+                : "text-gray-600 dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/5"
+            }`}
+          >
+            <Link2 size={14} />
+            <span>Connected Platforms & Verification</span>
+          </button>
+
+          <button
+            onClick={() => handleSelectTab("settings")}
             className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${
               activeTab === "settings"
                 ? "bg-[#8291fa] text-white shadow-md shadow-indigo-300/30"
                 : "text-gray-600 dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/5"
             }`}
           >
-            <KeyRound size={14} />
-            <span>Profile & Verification</span>
+            <User size={14} />
+            <span>Personal Profile & Account</span>
           </button>
         </div>
 
@@ -1544,8 +1596,8 @@ export default function SettingsPage() {
                     </div>
                   ) : (
                     <button
-                      onClick={() => setActiveTab("settings")}
-                      className="text-xs font-bold text-[#8090fd] hover:underline"
+                      onClick={() => handleSelectTab("platforms")}
+                      className="text-xs font-bold text-[#8090fd] hover:underline cursor-pointer"
                     >
                       Connect Handle +
                     </button>
@@ -1666,7 +1718,7 @@ export default function SettingsPage() {
                       Connect your LeetCode or Codeforces username and verify ownership to sync your real submissions, acceptance rate, and rank.
                     </p>
                     <button
-                      onClick={() => setActiveTab("settings")}
+                      onClick={() => handleSelectTab("platforms")}
                       className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-[#8291fa] hover:bg-[#7080f8] px-3.5 py-1.5 text-xs font-bold text-white transition cursor-pointer"
                     >
                       Connect & Verify Handles
@@ -2247,9 +2299,31 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* 6. TAB 4: PROFILE SETTINGS & VERIFICATION CENTER */}
-      {activeTab === "settings" && (
+      {/* 6. TAB: CONNECTED PLATFORMS & VERIFICATION CENTER */}
+      {activeTab === "platforms" && (
         <div className="space-y-6">
+          {/* Header Banner */}
+          <div className="rounded-3xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/[0.08] via-[#8090fd]/[0.05] to-transparent p-6 sm:p-8 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Link2 className="text-emerald-500" size={22} />
+                <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">
+                  Connected Platforms & Anti-Spoofing Verification
+                </h2>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 max-w-xl">
+                Bind your LeetCode, Codeforces, CodeChef, and GitHub handles to verify authenticity and sync official contest ratings and submissions to your StudyForge profile.
+              </p>
+            </div>
+            <Link
+              to="/coding"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-500/20 transition shrink-0"
+            >
+              <span>Coding Dashboard</span>
+              <ArrowUpRight size={14} />
+            </Link>
+          </div>
+
           {/* ANTI-SPOOFING PLATFORM VERIFICATION CENTER */}
           <div className="rounded-3xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-[#0e1526] p-6 sm:p-8 shadow-xl space-y-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 border-b border-slate-100 dark:border-slate-800 pb-6">
@@ -2726,7 +2800,12 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
 
+      {/* 7. TAB: PERSONAL PROFILE & ACCOUNT SECURITY */}
+      {activeTab === "settings" && (
+        <div className="space-y-6">
           {/* PERSONAL DETAILS FORM */}
           <div className="rounded-3xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0e1526] p-6 sm:p-8 shadow-xl">
             <h3 className="text-base font-black text-gray-900 dark:text-white flex items-center gap-2 mb-6">

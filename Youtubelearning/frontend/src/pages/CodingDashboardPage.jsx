@@ -56,11 +56,13 @@ import {
   DSA_TEMPLATES,
   COMPILER_LANGUAGES,
 } from "../services/compilerService";
+import useAuth from "../hooks/useAuth";
 
 const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 export default function CodingDashboardPage() {
+  const { user: authUser, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState("stats"); // 'stats', 'sandbox', 'social', 'contests'
   const [loading, setLoading] = useState(true);
 
@@ -77,10 +79,25 @@ export default function CodingDashboardPage() {
   const [cooldown, setCooldown] = useState(0);
 
   // Stats State
-  const [profiles, setProfiles] = useState({ leetcode: "", codeforces: "", codechef: "" });
-  const [inputValues, setInputValues] = useState({ leetcode: "", codeforces: "", codechef: "" });
-  const [editingProfiles, setEditingProfiles] = useState({ leetcode: false, codeforces: false, codechef: false });
-  const [stats, setStats] = useState({ leetcode: null, codeforces: null, codechef: null });
+  const [profiles, setProfiles] = useState({
+    leetcode: authUser?.leetcode || "",
+    codeforces: authUser?.codeforces || "",
+    codechef: authUser?.codechef || "",
+    github: authUser?.github || "",
+  });
+  const [inputValues, setInputValues] = useState({
+    leetcode: authUser?.leetcode || "",
+    codeforces: authUser?.codeforces || "",
+    codechef: authUser?.codechef || "",
+    github: authUser?.github || "",
+  });
+  const [editingProfiles, setEditingProfiles] = useState({
+    leetcode: false,
+    codeforces: false,
+    codechef: false,
+    github: false,
+  });
+  const [stats, setStats] = useState({ leetcode: null, codeforces: null, codechef: null, github: null });
   const [aiFeedback, setAiFeedback] = useState(null);
   const [activityToday, setActivityToday] = useState({});
   const [activityDates, setActivityDates] = useState([]);
@@ -335,7 +352,7 @@ export default function CodingDashboardPage() {
   function sanitizeHandle(input) {
     if (!input) return "";
     let str = String(input).trim().replace(/\/+$/, "");
-    const matches = str.match(/(?:leetcode\.com|codeforces\.com|codechef\.com|takeuforward\.org)\/(?:u\/|profile\/|users\/)?([a-zA-Z0-9_-]+)/gi);
+    const matches = str.match(/(?:leetcode\.com|codeforces\.com|codechef\.com|github\.com|takeuforward\.org)\/(?:u\/|profile\/|users\/)?([a-zA-Z0-9_-]+)/gi);
     if (matches && matches.length > 0) {
       const lastMatch = matches[matches.length - 1];
       const parts = lastMatch.split("/").filter(Boolean);
@@ -348,7 +365,7 @@ export default function CodingDashboardPage() {
       const segments = str.split("?")[0].split("#")[0].split("/").filter(Boolean);
       while (segments.length > 0) {
         const seg = segments.pop().replace(/[^a-zA-Z0-9_-]/g, "");
-        if (seg && seg !== "u" && seg !== "profile" && seg !== "users" && seg !== "https" && seg !== "http" && !seg.includes("leetcode") && !seg.includes("codeforces") && !seg.includes("codechef") && !seg.includes("takeuforward") && !seg.includes("com") && !seg.includes("org")) {
+        if (seg && seg !== "u" && seg !== "profile" && seg !== "users" && seg !== "https" && seg !== "http" && !seg.includes("leetcode") && !seg.includes("codeforces") && !seg.includes("codechef") && !seg.includes("github") && !seg.includes("takeuforward") && !seg.includes("com") && !seg.includes("org")) {
           return seg;
         }
       }
@@ -360,21 +377,34 @@ export default function CodingDashboardPage() {
     try {
       setSyncingStats(true);
       let cleanHandle = rawInput;
-      if (platform === "leetcode" || platform === "codeforces" || platform === "codechef") {
+      if (platform === "leetcode" || platform === "codeforces" || platform === "codechef" || platform === "github") {
         cleanHandle = sanitizeHandle(rawInput);
       } else {
         cleanHandle = (rawInput || "").trim();
       }
 
-      await updateCodingProfiles({ [platform]: cleanHandle });
+      const res = await updateCodingProfiles({ [platform]: cleanHandle });
+      
+      // Immediately reflect across all profile views
+      if (res && res.user) {
+        updateUser(res.user);
+      } else {
+        const stored = JSON.parse(localStorage.getItem("user") || "{}");
+        stored[platform] = cleanHandle;
+        updateUser(stored);
+      }
+
       setProfiles((prev) => ({ ...prev, [platform]: cleanHandle }));
       setInputValues((prev) => ({ ...prev, [platform]: cleanHandle }));
       setEditingProfiles((prev) => ({ ...prev, [platform]: false }));
 
       await fetchStats(true); // Force refresh live stats with cache bypass
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("userProfileUpdated", { detail: { platform, handle: cleanHandle } }));
+
       setStatusMessage({
         type: "success",
-        text: `Connected ${platform.toUpperCase()} profile (@${cleanHandle}) successfully!`,
+        text: `Connected ${platform.toUpperCase()} profile (@${cleanHandle}) successfully! Reflected across your profile.`,
       });
       setTimeout(() => setStatusMessage(null), 3500);
     } catch (err) {
@@ -395,13 +425,26 @@ export default function CodingDashboardPage() {
         leetcode: sanitizeHandle(inputValues.leetcode),
         codeforces: sanitizeHandle(inputValues.codeforces),
         codechef: sanitizeHandle(inputValues.codechef),
+        github: sanitizeHandle(inputValues.github),
       };
       setProfiles(cleanProfiles);
       setInputValues(cleanProfiles);
-      setEditingProfiles({ leetcode: false, codeforces: false, codechef: false });
-      await updateCodingProfiles(cleanProfiles);
+      setEditingProfiles({ leetcode: false, codeforces: false, codechef: false, github: false });
+      
+      const res = await updateCodingProfiles(cleanProfiles);
+      if (res && res.user) {
+        updateUser(res.user);
+      } else {
+        const stored = JSON.parse(localStorage.getItem("user") || "{}");
+        Object.assign(stored, cleanProfiles);
+        updateUser(stored);
+      }
+
       await fetchStats(true); // Force refresh live profile stats
-      setStatusMessage({ type: "success", text: "Profiles saved & live stats fetched successfully!" });
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("userProfileUpdated", { detail: cleanProfiles }));
+
+      setStatusMessage({ type: "success", text: "All platform connections saved & reflected across your profile!" });
       setTimeout(() => setStatusMessage(null), 3500);
     } catch (err) {
       if (err.response?.status === 401) {
@@ -417,12 +460,24 @@ export default function CodingDashboardPage() {
   const handleDisconnect = async (platform) => {
     try {
       setSyncingStats(true);
-      await disconnectCodingProfile(platform);
+      const res = await disconnectCodingProfile(platform);
+      if (res && res.user) {
+        updateUser(res.user);
+      } else {
+        const stored = JSON.parse(localStorage.getItem("user") || "{}");
+        stored[platform] = "";
+        updateUser(stored);
+      }
+
       setProfiles((prev) => ({ ...prev, [platform]: "" }));
       setInputValues((prev) => ({ ...prev, [platform]: "" }));
       setEditingProfiles((prev) => ({ ...prev, [platform]: false }));
       setStats((prev) => ({ ...prev, [platform]: null }));
       await fetchStats(true);
+
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("userProfileUpdated", { detail: { platform, handle: "" } }));
+
       setStatusMessage({ type: "success", text: `Disconnected ${platform.toUpperCase()} profile successfully.` });
       setTimeout(() => setStatusMessage(null), 3500);
     } catch (err) {
@@ -1258,6 +1313,18 @@ export default function CodingDashboardPage() {
                           },
                           placeholder: "e.g. codechef_user or https://codechef.com/users/user",
                         },
+                        {
+                          id: "github",
+                          name: "GitHub",
+                          siteUrl: "https://github.com",
+                          getProfileUrl: (h) => {
+                            if (!h) return "https://github.com";
+                            if (h.startsWith("http://") || h.startsWith("https://")) return h;
+                            const clean = sanitizeHandle(h);
+                            return `https://github.com/${clean}`;
+                          },
+                          placeholder: "e.g. torvalds or https://github.com/torvalds",
+                        },
                       ].map((plat) => {
                         const isSaved = Boolean(profiles[plat.id]);
                         const isEditing = Boolean(editingProfiles[plat.id]);
@@ -1375,6 +1442,16 @@ export default function CodingDashboardPage() {
                       <Button onClick={handleSaveProfiles} disabled={syncingStats} className="w-full mt-3">
                         <Save size={16} className="mr-2" /> {syncingStats ? "Saving & Syncing All..." : "Save All Platform Connections"}
                       </Button>
+
+                      <div className="pt-2 flex items-center justify-between text-xs border-t border-black/5 dark:border-white/5">
+                        <span className="text-muted">Want cryptographic ownership verification?</span>
+                        <Link
+                          to="/settings?tab=platforms"
+                          className="font-bold text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-1"
+                        >
+                          Verify in Profile Section <ExternalLink size={12} />
+                        </Link>
+                      </div>
                     </div>
                   </div>
 

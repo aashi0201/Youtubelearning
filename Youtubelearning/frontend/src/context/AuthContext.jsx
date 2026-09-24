@@ -55,7 +55,33 @@ export function AuthProvider({ children }) {
     if (updatedUser) {
       localStorage.setItem("user", JSON.stringify(updatedUser));
       setUser(updatedUser);
+      window.dispatchEvent(new Event("storage"));
     }
+  }, []);
+
+  // Listen for storage changes and custom user profile events across the app
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (!e || !e.key || e.key === "user") {
+        try {
+          const stored = JSON.parse(localStorage.getItem("user") || "null");
+          if (stored) setUser(stored);
+        } catch {}
+      }
+    };
+    const handleCustomUpdate = (e) => {
+      try {
+        const stored = JSON.parse(localStorage.getItem("user") || "null");
+        if (stored) setUser(stored);
+      } catch {}
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("userProfileUpdated", handleCustomUpdate);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("userProfileUpdated", handleCustomUpdate);
+    };
   }, []);
 
   /**
